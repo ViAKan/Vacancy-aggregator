@@ -14,6 +14,7 @@ import ru.practicum.android.diploma.presentation.favouritevacancies.uistate.Favo
 import ru.practicum.android.diploma.presentation.favouritevacancies.viewmodel.FavouriteVacanciesViewModel
 import ru.practicum.android.diploma.presentation.models.vacancies.VacancyUiModel
 import ru.practicum.android.diploma.ui.vacancysearch.recyclerview.VacancyItemAdapter
+import ru.practicum.android.diploma.util.DebounceConstants.SEARCH_DEBOUNCE_DELAY
 import ru.practicum.android.diploma.util.Debouncer
 
 class FavouriteVacanciesFragment : Fragment() {
@@ -25,7 +26,7 @@ class FavouriteVacanciesFragment : Fragment() {
     private val adapter = VacancyItemAdapter(vacancies)
 
     private val debounce by lazy {
-        Debouncer(viewLifecycleOwner.lifecycleScope, CLICK_DEBOUNCE_DELAY)
+        Debouncer(viewLifecycleOwner.lifecycleScope, SEARCH_DEBOUNCE_DELAY)
     }
 
     private val favouriteVacanciesViewModel: FavouriteVacanciesViewModel by viewModel()
