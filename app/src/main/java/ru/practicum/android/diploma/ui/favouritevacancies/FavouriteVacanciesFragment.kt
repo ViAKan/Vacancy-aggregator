@@ -29,7 +29,7 @@ class FavouriteVacanciesFragment : Fragment() {
         Debouncer(viewLifecycleOwner.lifecycleScope, SEARCH_DEBOUNCE_DELAY)
     }
 
-    private val favouriteVacanciesViewModel: FavouriteVacanciesViewModel by viewModel()
+    private val favouriteVacanciesViewModel by viewModel<FavouriteVacanciesViewModel>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         _binding = FavouriteVacanciesFragmentBinding.inflate(inflater, container, false)
