@@ -9,7 +9,7 @@
         android:id="@+id/header"/>
 
     <LinearLayout
-        android:id="@+id/favourite_placeholder"
+        android:id="@+id/favourite_empty_placeholder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"

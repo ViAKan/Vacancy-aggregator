@@ -72,7 +72,7 @@ class FavouriteVacanciesFragment : Fragment() {
 
     private fun showVacancies(vacanciesList: List<VacancyUiModel>) {
         binding.recyclerViewFavourite.visibility = View.VISIBLE
-        binding.favouritePlaceholder.visibility = View.GONE
+        binding.favouriteCoverPlaceholder.visibility = View.GONE
 
         vacancies.clear()
         vacancies.addAll(vacanciesList)
@@ -81,13 +81,9 @@ class FavouriteVacanciesFragment : Fragment() {
 
     private fun showPlaceholder(imageRes: Int, message: Int) {
         binding.recyclerViewFavourite.visibility = View.GONE
-        binding.favouritePlaceholder.visibility = View.VISIBLE
+        binding.favouriteCoverPlaceholder.visibility = View.VISIBLE
 
         binding.favouriteCoverPlaceholder.setImageResource(imageRes)
         binding.favouriteTextPlaceholder.setText(message)
-    }
-
-    companion object {
-        private const val CLICK_DEBOUNCE_DELAY = 2000L
     }
 }
