@@ -33,3 +33,16 @@ fun EditText.hideKeyboardOnDone(context: Context) {
         } else false
     }
 }
+
+fun EditText.hideKeyboardOnIconClose(context: Context) {
+    val imm =
+        context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(windowToken, 0)
+}
+
+fun Context.getThemeColor(attrResId: Int): Int {
+    val typedArray = theme.obtainStyledAttributes(intArrayOf(attrResId))
+    val color = typedArray.getColor(0, 0)
+    typedArray.recycle()
+    return color
+}

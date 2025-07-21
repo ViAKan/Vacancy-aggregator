@@ -1,6 +1,6 @@
 package ru.practicum.android.diploma.ui.searchfilters
 
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,12 +11,14 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.color.MaterialColors
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.practicum.android.diploma.R
 import ru.practicum.android.diploma.databinding.SearchFiltersFragmentBinding
 import ru.practicum.android.diploma.domain.models.filters.FilterParameters
 import ru.practicum.android.diploma.presentation.SearchFiltersViewModel
+import ru.practicum.android.diploma.util.getThemeColor
+import ru.practicum.android.diploma.util.hideKeyboardOnDone
+import ru.practicum.android.diploma.util.hideKeyboardOnIconClose
 
 class SearchFiltersFragment : Fragment() {
 
@@ -24,6 +26,7 @@ class SearchFiltersFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel by viewModel<SearchFiltersViewModel>()
+    private var themeColor: Int = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         _binding = SearchFiltersFragmentBinding.inflate(inflater, container, false)
@@ -33,6 +36,8 @@ class SearchFiltersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        themeColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorOnContainer)
+
         binding.editTextWorkplace.setOnClickListener {
             findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment)
         }
@@ -41,34 +46,37 @@ class SearchFiltersFragment : Fragment() {
             findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment)
         }
 
-        binding.editText.doOnTextChanged { text, start, before, count ->
-            val query = text?.toString()
-
-            if (query?.isNotEmpty() == true && binding.editText.hasFocus()) {
-                binding.topHint.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue))
-                binding.icon.isVisible = true
-                binding.icon.setOnClickListener {
-                    binding.editText.setText("")
-                }
-                binding.btnApply.isVisible = true
-                binding.btnCancel.isVisible = true
-
-            } else if (query?.isNotEmpty() == true) {
-                binding.topHint.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
-
-            } else {
-                binding.icon.isVisible = false
-                binding.btnApply.isVisible = false
-                binding.btnCancel.isVisible = false
-                binding.topHint.setTextColor(
-                    MaterialColors.getColor(
-                        requireContext(),
-                        com.google.android.material.R.attr.colorOnContainer,
-                        Color.BLACK
-                    )
-                )
-            }
+        binding.icon.setOnClickListener {
+            binding.editText.setText("")
+            binding.editText.clearFocus()
+            binding.topHint.setTextColor(themeColor)
+            binding.editText.hideKeyboardOnIconClose(requireContext())
         }
+
+        binding.editText.doOnTextChanged { text, start, before, count ->
+            val query = text?.toString()?.trim().orEmpty()
+
+            binding.icon.isVisible = query.isNotEmpty()
+            binding.btnApply.isVisible = query.isNotEmpty()
+            binding.btnCancel.isVisible = query.isNotEmpty()
+        }
+
+        binding.editText.hideKeyboardOnDone(requireContext())
+        
+        binding.editText.setOnFocusChangeListener { v, hasFocus ->
+            val color = if (hasFocus) {
+                ContextCompat.getColor(requireContext(), R.color.blue)
+            } else {
+                val currentText = binding.editText.text.toString()
+                if (currentText.isEmpty()) {
+                    themeColor
+                } else {
+                    ContextCompat.getColor(requireContext(), R.color.black)
+                }
+            }
+            binding.topHint.setTextColor(color)
+        }
+        
         binding.arrowBack.setOnClickListener {
             findNavController().popBackStack()
         }
@@ -107,6 +115,7 @@ class SearchFiltersFragment : Fragment() {
         val country = state.countryName
         val region = state.regionName
         val isEmpty = country.isNullOrBlank() && region.isNullOrBlank()
+        val gray = ContextCompat.getColor(requireContext(), R.color.gray)
 
         val workplaceText = listOfNotNull(country, region)
             .filter { it.isNotBlank() }
@@ -114,7 +123,17 @@ class SearchFiltersFragment : Fragment() {
 
         binding.editTextWorkplace.setText(workplaceText)
 
-        binding.inputLayoutWorkplace.hint = if (isEmpty) getString(R.string.workplace) else ""
+        val color = if (isEmpty) {
+            gray
+        } else {
+            requireContext().getThemeColor(com.google.android.material.R.attr.colorOnPrimary)
+        }
+        binding.inputLayoutWorkplace.defaultHintTextColor = ColorStateList.valueOf(color)
+        binding.inputLayoutIndustry.defaultHintTextColor = ColorStateList.valueOf(color)
+
+        val hintSize = if (isEmpty) R.style.HintAppearance_Normal else R.style.HintAppearance_Small
+        binding.inputLayoutWorkplace.setHintTextAppearance(hintSize)
+        binding.inputLayoutIndustry.setHintTextAppearance(hintSize)
 
         val icon = if (isEmpty) R.drawable.arrow_forward_24px else R.drawable.close_24px
         binding.inputLayoutWorkplace.setEndIconDrawable(icon)

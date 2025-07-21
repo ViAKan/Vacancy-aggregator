@@ -1,9 +1,11 @@
 package ru.practicum.android.diploma.ui.searchfilters.workplacefilters
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
@@ -13,6 +15,7 @@ import ru.practicum.android.diploma.R
 import ru.practicum.android.diploma.databinding.WorkplaceFragmentBinding
 import ru.practicum.android.diploma.domain.models.filters.SelectionType
 import ru.practicum.android.diploma.presentation.workplacescreen.WorkplaceFiltersViewModel
+import ru.practicum.android.diploma.util.getThemeColor
 
 class WorkplaceFiltersFragment : Fragment() {
 
@@ -87,9 +90,22 @@ class WorkplaceFiltersFragment : Fragment() {
 
     private fun renderSelectedCountry(name: String?) {
         val isEmpty = name.isNullOrBlank()
+        val gray = ContextCompat.getColor(requireContext(), R.color.gray)
 
         binding.editTextCountry.setText(name)
-        binding.inputLayoutCountry.hint = if (isEmpty) getString(R.string.country) else ""
+        binding.inputLayoutCountry.hint = getString(R.string.country)
+
+        val color = if (isEmpty) {
+            gray
+        } else {
+            requireContext().getThemeColor(com.google.android.material.R.attr.colorOnPrimary)
+        }
+
+        binding.inputLayoutCountry.defaultHintTextColor = ColorStateList.valueOf(color)
+        binding.inputLayoutRegion.defaultHintTextColor = ColorStateList.valueOf(color)
+
+        val hintSize = if (isEmpty) R.style.HintAppearance_Normal else R.style.HintAppearance_Small
+        binding.inputLayoutCountry.setHintTextAppearance(hintSize)
 
         val icon = if (isEmpty) R.drawable.arrow_forward_24px else R.drawable.close_24px
         binding.inputLayoutCountry.setEndIconDrawable(icon)
