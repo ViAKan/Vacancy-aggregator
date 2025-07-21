@@ -31,7 +31,7 @@ class WorkplaceFiltersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //на фрагменте региона также использовать этот ключ в результате
+        // на фрагменте региона также использовать этот ключ в результате
         setFragmentResultListener(SELECTION_RESULT_KEY) { _, bundle ->
             val type = SelectionType.from(bundle.getString(SELECTION_TYPE_KEY))
             val value = bundle.getString(SELECTION_VALUE_KEY)
