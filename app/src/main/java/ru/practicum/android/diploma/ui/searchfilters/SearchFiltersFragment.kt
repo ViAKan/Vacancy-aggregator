@@ -1,6 +1,6 @@
 package ru.practicum.android.diploma.ui.searchfilters
 
-import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,14 +11,12 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.color.MaterialColors
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.practicum.android.diploma.R
 import ru.practicum.android.diploma.databinding.SearchFiltersFragmentBinding
 import ru.practicum.android.diploma.domain.models.filters.FilterParameters
 import ru.practicum.android.diploma.presentation.SearchFiltersViewModel
-import ru.practicum.android.diploma.util.getThemeColor
-import ru.practicum.android.diploma.util.hideKeyboardOnDone
-import ru.practicum.android.diploma.util.hideKeyboardOnIconClose
 
 class SearchFiltersFragment : Fragment() {
 
@@ -62,7 +60,7 @@ class SearchFiltersFragment : Fragment() {
         }
 
         binding.editText.hideKeyboardOnDone(requireContext())
-        
+
         binding.editText.setOnFocusChangeListener { v, hasFocus ->
             val color = if (hasFocus) {
                 ContextCompat.getColor(requireContext(), R.color.blue)
@@ -76,7 +74,7 @@ class SearchFiltersFragment : Fragment() {
             }
             binding.topHint.setTextColor(color)
         }
-        
+
         binding.arrowBack.setOnClickListener {
             findNavController().popBackStack()
         }
