@@ -1,0 +1,344 @@
+Index: app/src/main/java/ru/practicum/android/diploma/ui/vacancysearch/fragment/VacancySearchFragment.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.ui.vacancysearch.fragment\r\n\r\nimport android.os.Bundle\r\nimport android.util.Log\r\nimport android.view.LayoutInflater\r\nimport android.view.View\r\nimport android.view.ViewGroup\r\nimport android.view.inputmethod.EditorInfo\r\nimport android.widget.Toast\r\nimport androidx.core.view.isVisible\r\nimport androidx.core.widget.doOnTextChanged\r\nimport androidx.fragment.app.Fragment\r\nimport androidx.lifecycle.lifecycleScope\r\nimport androidx.navigation.fragment.findNavController\r\nimport androidx.recyclerview.widget.LinearLayoutManager\r\nimport androidx.recyclerview.widget.RecyclerView\r\nimport org.koin.androidx.viewmodel.ext.android.viewModel\r\nimport ru.practicum.android.diploma.R\r\nimport ru.practicum.android.diploma.databinding.VacancySearchFragmentBinding\r\nimport ru.practicum.android.diploma.domain.models.filters.FilterParameters\r\nimport ru.practicum.android.diploma.domain.models.filters.VacancyFilters\r\nimport ru.practicum.android.diploma.presentation.SearchFiltersViewModel\r\nimport ru.practicum.android.diploma.presentation.mappers.toUiModel\r\nimport ru.practicum.android.diploma.presentation.mappers.toVacancyFilter\r\nimport ru.practicum.android.diploma.presentation.models.vacancies.VacanciesState\r\nimport ru.practicum.android.diploma.presentation.models.vacancies.VacancyUiModel\r\nimport ru.practicum.android.diploma.presentation.vacancysearchscreen.viewmodels.VacanciesSearchViewModel\r\nimport ru.practicum.android.diploma.ui.searchfilters.SearchFiltersFragment\r\nimport ru.practicum.android.diploma.ui.vacancysearch.fragment.uifragmentutils.Callbacks\r\nimport ru.practicum.android.diploma.ui.vacancysearch.fragment.uifragmentutils.StateHandlers\r\nimport ru.practicum.android.diploma.ui.vacancysearch.fragment.uifragmentutils.UiComponents\r\nimport ru.practicum.android.diploma.ui.vacancysearch.recyclerview.TopSpacingItemDecoration\r\nimport ru.practicum.android.diploma.ui.vacancysearch.recyclerview.VacancyItemAdapter\r\nimport ru.practicum.android.diploma.util.DebounceConstants.SEARCH_DEBOUNCE_DELAY\r\nimport ru.practicum.android.diploma.util.Debouncer\r\nimport ru.practicum.android.diploma.util.dpToPx\r\n\r\nclass VacancySearchFragment : Fragment(), VacancyItemAdapter.Listener {\r\n\r\n    private var _binding: VacancySearchFragmentBinding? = null\r\n    private val binding get() = _binding!!\r\n    private val searchViewModel by viewModel<VacanciesSearchViewModel>()\r\n    private val filtersViewModel by viewModel<SearchFiltersViewModel>()\r\n    private var ui: VacancySearchUi? = null\r\n\r\n    private var vacanciesList = ArrayList<VacancyUiModel>()\r\n    private val adapter = VacancyItemAdapter(this)\r\n\r\n    private var debouncer: Debouncer? = null\r\n\r\n    private var debounceForPlaceholder: Debouncer? = null\r\n\r\n    private var isLoading = false\r\n    private var hasMore = true\r\n\r\n    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {\r\n        _binding = VacancySearchFragmentBinding.inflate(inflater, container, false)\r\n        return binding.root\r\n    }\r\n\r\n    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\r\n        super.onViewCreated(view, savedInstanceState)\r\n\r\n        parentFragmentManager.setFragmentResultListener(\r\n            SearchFiltersFragment.SEARCH_WITH_FILTERS_KEY,\r\n            viewLifecycleOwner\r\n        ) { _, bundle ->\r\n            val filters: FilterParameters? = bundle.getParcelable(SearchFiltersFragment.SEARCH_WITH_FILTERS_KEY)\r\n            val query = binding.inputEditText.text.toString()\r\n            val filtersRequest = filters?.toVacancyFilter(text = query) ?: VacancyFilters(text = query)\r\n\r\n            searchViewModel.searchVacancies(\r\n                query = query,\r\n                area = filtersRequest.area,\r\n                industry = filtersRequest.industry,\r\n                currency = filtersRequest.currency,\r\n                salary = filtersRequest.salary,\r\n                onlyWithSalary = filtersRequest.onlyWithSalary,\r\n                isNewSearch = true\r\n            )\r\n        }\r\n\r\n        debouncer = Debouncer(viewLifecycleOwner.lifecycleScope, SEARCH_DEBOUNCE_DELAY)\r\n        debounceForPlaceholder = Debouncer(viewLifecycleOwner.lifecycleScope, SEARCH_ERROR_DELAY)\r\n\r\n        val uiComponents = UiComponents(\r\n            binding = binding,\r\n            adapter = adapter,\r\n            clearFocusView = view,\r\n            context = requireContext(),\r\n            activity = requireActivity()\r\n        )\r\n\r\n        val stateHandlers = StateHandlers(\r\n            debouncer = debouncer,\r\n            debounceForPlaceholder = debounceForPlaceholder,\r\n            viewModel = searchViewModel,\r\n            vacancyList = vacanciesList\r\n        )\r\n\r\n        val callbacks = Callbacks(\r\n            onClear = { vacanciesList.clear() }\r\n        )\r\n\r\n        ui = VacancySearchUi(\r\n            ui = uiComponents,\r\n            state = stateHandlers,\r\n            callbacks = callbacks\r\n        )\r\n\r\n        initUI()\r\n        observeViewModel()\r\n        setupSearchInput()\r\n        setupRecyclerView()\r\n\r\n    }\r\n\r\n    override fun onDestroyView() {\r\n        super.onDestroyView()\r\n        _binding = null\r\n    }\r\n\r\n    companion object {\r\n        private const val SEARCH_ERROR_DELAY = 700L\r\n        private const val RECYCLER_MARGIN_TOP = 38F\r\n        private const val TOTAL_COUNT = 20\r\n    }\r\n\r\n    override fun onClick(id: String) {\r\n        Log.d(\"VacanciesID\", id)\r\n        val action = VacancySearchFragmentDirections.actionVacancySearchFragmentToVacancyDetailsFragment(vacancyId = id)\r\n        findNavController().navigate(action)\r\n    }\r\n\r\n    private fun initUI() {\r\n        binding.header.toolbarTitle.text = getString(R.string.search_vacancy)\r\n        binding.header.iconFilter.isVisible = true\r\n        binding.recyclerViewSearch.addItemDecoration(\r\n            TopSpacingItemDecoration(\r\n                dpToPx(RECYCLER_MARGIN_TOP, requireContext())\r\n            )\r\n        )\r\n\r\n        binding.header.iconFilter.setOnClickListener {\r\n            findNavController().navigate(R.id.action_vacancySearchFragment_to_searchFiltersFragment)\r\n        }\r\n    }\r\n\r\n    private fun observeViewModel() {\r\n        searchViewModel.state.observe(viewLifecycleOwner) { state ->\r\n            when (state) {\r\n                is VacanciesState.Initial -> ui?.showInitialState()\r\n                is VacanciesState.Loading -> ui?.showLoadingState()\r\n                is VacanciesState.LoadingMore -> ui?.showLoadingMoreState()\r\n                is VacanciesState.Success -> {\r\n                    Log.d(\"Vacancies\", state.vacancies.toString())\r\n                    ui?.showSuccessState()\r\n                    binding.searchMessage.text =\r\n                        getString(R.string.found) + \" ${state.totalFound} \" + getString(R.string.vacancies)\r\n\r\n                    adapter.submitList(state.vacancies.map { it.toUiModel() })\r\n\r\n                    hasMore = state.hasMore\r\n                    isLoading = false\r\n                }\r\n\r\n                VacanciesState.Empty -> ui?.showEmptyState()\r\n                VacanciesState.NoInternet -> ui?.showNoInternetState()\r\n                VacanciesState.ServerError -> ui?.showServerErrorState()\r\n            }\r\n        }\r\n\r\n        searchViewModel.showToast.observe(viewLifecycleOwner) { message ->\r\n            Toast.makeText(requireContext(), getString(message), Toast.LENGTH_SHORT).show()\r\n        }\r\n    }\r\n\r\n    private fun setupSearchInput() {\r\n        binding.inputEditText.doOnTextChanged { text, start, before, count ->\r\n            val query = text?.toString()?.trim()\r\n            val currentQuery = searchViewModel.getCurrentQuery()\r\n\r\n            if (query == currentQuery) {\r\n                if (query.isNotEmpty()) {\r\n                    ui?.showNonEmptyInput()\r\n                } else {\r\n                    ui?.showEmptyInput()\r\n                    searchViewModel.resetState()\r\n                }\r\n            }\r\n\r\n            if (!query.isNullOrEmpty()) {\r\n                ui?.showNonEmptyInput()\r\n                debouncer?.submit {\r\n                    activity?.runOnUiThread {\r\n                        binding.progressBar.isVisible = true\r\n                        searchViewModel.searchVacancies(query)\r\n                    }\r\n                }\r\n            } else {\r\n                ui?.showEmptyInput()\r\n                searchViewModel.resetState()\r\n            }\r\n        }\r\n\r\n        binding.inputEditText.setOnEditorActionListener { _, actionId, _ ->\r\n            if (actionId == EditorInfo.IME_ACTION_DONE) {\r\n                val query = binding.inputEditText.text.toString().trim()\r\n                debouncer?.cancel()\r\n                binding.progressBar.isVisible = true\r\n                searchViewModel.searchVacancies(query)\r\n                true\r\n            }\r\n            false\r\n        }\r\n    }\r\n\r\n    private fun setupRecyclerView() {\r\n        binding.recyclerViewSearch.layoutManager = LinearLayoutManager(requireContext())\r\n        binding.recyclerViewSearch.adapter = adapter\r\n        binding.recyclerViewSearch.addOnScrollListener(object : RecyclerView.OnScrollListener() {\r\n            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {\r\n                super.onScrolled(recyclerView, dx, dy)\r\n\r\n                val layoutManager = recyclerView.layoutManager as LinearLayoutManager\r\n                val visibleItemCount = layoutManager.childCount\r\n                val totalItemCount = layoutManager.itemCount\r\n                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()\r\n\r\n                val isNotLoadingAndHasMore = !isLoading && hasMore\r\n                val isScrolledToEnd = visibleItemCount + firstVisibleItemPosition >= totalItemCount - 1\r\n                val isFirstItemVisibleAndIsTotalCountValid =\r\n                    firstVisibleItemPosition >= 0 && totalItemCount >= TOTAL_COUNT\r\n\r\n                if (isNotLoadingAndHasMore && isScrolledToEnd && isFirstItemVisibleAndIsTotalCountValid) {\r\n                    searchViewModel.loadMore()\r\n                }\r\n            }\r\n        })\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/ui/vacancysearch/fragment/VacancySearchFragment.kt b/app/src/main/java/ru/practicum/android/diploma/ui/vacancysearch/fragment/VacancySearchFragment.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/ui/vacancysearch/fragment/VacancySearchFragment.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/ui/vacancysearch/fragment/VacancySearchFragment.kt	(date 1753212105652)
+@@ -66,16 +66,13 @@
+             viewLifecycleOwner
+         ) { _, bundle ->
+             val filters: FilterParameters? = bundle.getParcelable(SearchFiltersFragment.SEARCH_WITH_FILTERS_KEY)
++            Log.d("RequestFilters", "${filters?.salary} зп, ${filters?.industryName} отрасль, ${filters?.regionName} регион, ${filters?.countryName} страна, ${filters?.checkboxWithoutSalary} чекбокс")
+             val query = binding.inputEditText.text.toString()
+             val filtersRequest = filters?.toVacancyFilter(text = query) ?: VacancyFilters(text = query)
++            Log.d("RequestFilters", "${filtersRequest.salary} зп, ${filtersRequest.industry} отрасль, ${filtersRequest.area} регион, ${filtersRequest.onlyWithSalary} чекбокс")
+ 
+             searchViewModel.searchVacancies(
+                 query = query,
+-                area = filtersRequest.area,
+-                industry = filtersRequest.industry,
+-                currency = filtersRequest.currency,
+-                salary = filtersRequest.salary,
+-                onlyWithSalary = filtersRequest.onlyWithSalary,
+                 isNewSearch = true
+             )
+         }
+Index: app/src/main/java/ru/practicum/android/diploma/presentation/vacancysearchscreen/viewmodels/VacanciesSearchViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.presentation.vacancysearchscreen.viewmodels\r\n\r\nimport android.util.Log\r\nimport androidx.lifecycle.LiveData\r\nimport androidx.lifecycle.MutableLiveData\r\nimport androidx.lifecycle.ViewModel\r\nimport androidx.lifecycle.viewModelScope\r\nimport kotlinx.coroutines.Dispatchers\r\nimport kotlinx.coroutines.flow.flowOn\r\nimport kotlinx.coroutines.launch\r\nimport ru.practicum.android.diploma.R\r\nimport ru.practicum.android.diploma.data.vacancysearchscreen.impl.ErrorType\r\nimport ru.practicum.android.diploma.domain.filters.repository.FiltersParametersInteractor\r\nimport ru.practicum.android.diploma.domain.models.api.VacanciesInteractor\r\nimport ru.practicum.android.diploma.domain.models.filters.VacancyFilters\r\nimport ru.practicum.android.diploma.domain.models.paging.VacanciesResult\r\nimport ru.practicum.android.diploma.domain.models.vacancies.Vacancy\r\nimport ru.practicum.android.diploma.presentation.models.vacancies.VacanciesState\r\nimport ru.practicum.android.diploma.util.Resource\r\nimport ru.practicum.android.diploma.util.SingleEventLiveData\r\n\r\nclass VacanciesSearchViewModel(\r\n    private val interactor: VacanciesInteractor,\r\n    private val interactorFilter: FiltersParametersInteractor\r\n) : ViewModel() {\r\n    private val _state = MutableLiveData<VacanciesState>()\r\n    val state: LiveData<VacanciesState> = _state\r\n\r\n    private val _showToast = SingleEventLiveData<Int>()\r\n    val showToast: LiveData<Int> = _showToast\r\n\r\n    private var currentFilters = VacancyFilters(text = \"\", page = 0)\r\n    private var currentQuery = \"\"\r\n    private var currentPage = 0\r\n    private var totalPages = 0\r\n    private var isLoading = false\r\n    private var hasMore = true\r\n    private val vacancies = mutableListOf<Vacancy>()\r\n    private var lastErrorType: ErrorType? = null\r\n    private var totalFound = 0\r\n\r\n    fun searchVacancies(\r\n        query: String,\r\n        area: String? = null,\r\n        industry: String? = null,\r\n        currency: String? = null,\r\n        salary: Int? = null,\r\n        onlyWithSalary: Boolean = false,\r\n        isNewSearch: Boolean = true\r\n    ) {\r\n        if (query.isEmpty()) {\r\n            resetState()\r\n            return\r\n        }\r\n\r\n        if (isNewSearch) {\r\n            currentQuery = query\r\n            currentPage = 0\r\n            hasMore = true\r\n            vacancies.clear()\r\n            _state.value = VacanciesState.Loading\r\n\r\n            currentFilters = VacancyFilters(\r\n                text = query,\r\n                page = 0,\r\n                perPage = 20,\r\n                area = area,\r\n                industry = industry,\r\n                currency = currency,\r\n                salary = salary,\r\n                onlyWithSalary = onlyWithSalary\r\n            )\r\n        } else if (!hasMore || isLoading) {\r\n            return\r\n        }\r\n\r\n        currentFilters = currentFilters.copy(page = currentPage)\r\n\r\n        isLoading = true\r\n        if (currentFilters.page > 0) {\r\n            _state.value = VacanciesState.LoadingMore\r\n        }\r\n\r\n        viewModelScope.launch {\r\n            interactor.search(currentFilters)\r\n                .flowOn(Dispatchers.IO)\r\n                .collect { resource ->\r\n                    isLoading = false\r\n                    when (resource) {\r\n                        is Resource.Success -> handleSuccess(resource, isNewSearch)\r\n                        is Resource.Error -> handleError(resource)\r\n                    }\r\n                }\r\n        }\r\n    }\r\n\r\n    private fun handleSuccess(resource: Resource.Success<VacanciesResult>, isNewSearch: Boolean) {\r\n        resource.data?.let { result ->\r\n            hasMore = result.page < result.pages - 1\r\n            currentPage = result.page + 1\r\n            totalPages = result.pages\r\n\r\n            if (isNewSearch) {\r\n                vacancies.clear()\r\n                totalFound = result.totalFound\r\n            }\r\n\r\n            val uniqueNewVacancies = result.vacancies.filterNot { newVacancy ->\r\n                vacancies.any { it.id == newVacancy.id }\r\n            }\r\n\r\n            vacancies.addAll(uniqueNewVacancies)\r\n\r\n            _state.value = if (vacancies.isEmpty()) {\r\n                VacanciesState.Empty\r\n            } else {\r\n                VacanciesState.Success(\r\n                    vacancies = vacancies.toList(),\r\n                    currentPage = result.page,\r\n                    totalPages = result.pages,\r\n                    totalFound = totalFound,\r\n                    hasMore = hasMore\r\n                )\r\n            }\r\n        } ?: run {\r\n            _state.value = VacanciesState.Empty\r\n            if (lastErrorType == null) {\r\n                _showToast.value = R.string.nothing_found\r\n            }\r\n        }\r\n    }\r\n\r\n    private fun handleError(resource: Resource.Error<VacanciesResult>) {\r\n        if (lastErrorType != resource.errorType) {\r\n            lastErrorType = resource.errorType\r\n            _showToast.value = when (resource.errorType) {\r\n                ErrorType.NO_INTERNET -> R.string.check_connecton\r\n                ErrorType.SERVER_ERROR -> R.string.server_error\r\n                else -> R.string.unknown_error\r\n            }\r\n        }\r\n\r\n        _state.value = if (vacancies.isEmpty()) {\r\n            when (resource.errorType) {\r\n                ErrorType.NO_INTERNET -> VacanciesState.NoInternet\r\n                ErrorType.SERVER_ERROR -> VacanciesState.ServerError\r\n                else -> VacanciesState.Empty\r\n            }\r\n        } else {\r\n            VacanciesState.Success(\r\n                vacancies = vacancies.toList(),\r\n                currentPage = currentPage - 1,\r\n                totalPages = totalPages,\r\n                totalFound = totalFound,\r\n                hasMore = hasMore\r\n            )\r\n        }\r\n    }\r\n\r\n    fun loadMore() {\r\n        if (!isLoading && hasMore) {\r\n            searchVacancies(currentQuery, isNewSearch = false)\r\n        }\r\n    }\r\n\r\n    fun resetState() {\r\n        currentQuery = \"\"\r\n        currentPage = 0\r\n        totalPages = 0\r\n        hasMore = true\r\n        vacancies.clear()\r\n        _state.value = VacanciesState.Initial\r\n    }\r\n\r\n    fun getCurrentQuery(): String = currentQuery\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/presentation/vacancysearchscreen/viewmodels/VacanciesSearchViewModel.kt b/app/src/main/java/ru/practicum/android/diploma/presentation/vacancysearchscreen/viewmodels/VacanciesSearchViewModel.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/presentation/vacancysearchscreen/viewmodels/VacanciesSearchViewModel.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/presentation/vacancysearchscreen/viewmodels/VacanciesSearchViewModel.kt	(date 1753212105651)
+@@ -15,13 +15,14 @@
+ import ru.practicum.android.diploma.domain.models.filters.VacancyFilters
+ import ru.practicum.android.diploma.domain.models.paging.VacanciesResult
+ import ru.practicum.android.diploma.domain.models.vacancies.Vacancy
++import ru.practicum.android.diploma.presentation.mappers.toVacancyFilter
+ import ru.practicum.android.diploma.presentation.models.vacancies.VacanciesState
+ import ru.practicum.android.diploma.util.Resource
+ import ru.practicum.android.diploma.util.SingleEventLiveData
+ 
+ class VacanciesSearchViewModel(
+     private val interactor: VacanciesInteractor,
+-    private val interactorFilter: FiltersParametersInteractor
++    private val interactorFilters: FiltersParametersInteractor
+ ) : ViewModel() {
+     private val _state = MutableLiveData<VacanciesState>()
+     val state: LiveData<VacanciesState> = _state
+@@ -29,7 +30,6 @@
+     private val _showToast = SingleEventLiveData<Int>()
+     val showToast: LiveData<Int> = _showToast
+ 
+-    private var currentFilters = VacancyFilters(text = "", page = 0)
+     private var currentQuery = ""
+     private var currentPage = 0
+     private var totalPages = 0
+@@ -40,49 +40,40 @@
+     private var totalFound = 0
+ 
+     fun searchVacancies(
+-        query: String,
+-        area: String? = null,
+-        industry: String? = null,
+-        currency: String? = null,
+-        salary: Int? = null,
+-        onlyWithSalary: Boolean = false,
++        query: String? = null,
+         isNewSearch: Boolean = true
+     ) {
+-        if (query.isEmpty()) {
++        if (query?.isEmpty() == true) {
+             resetState()
+             return
+         }
+ 
+         if (isNewSearch) {
+-            currentQuery = query
++            currentQuery = query!!
+             currentPage = 0
+             hasMore = true
+             vacancies.clear()
+             _state.value = VacanciesState.Loading
+-
+-            currentFilters = VacancyFilters(
+-                text = query,
+-                page = 0,
+-                perPage = 20,
+-                area = area,
+-                industry = industry,
+-                currency = currency,
+-                salary = salary,
+-                onlyWithSalary = onlyWithSalary
+-            )
+         } else if (!hasMore || isLoading) {
+             return
+         }
+ 
+-        currentFilters = currentFilters.copy(page = currentPage)
+-
+         isLoading = true
+-        if (currentFilters.page > 0) {
++        if (currentPage > 0) {
+             _state.value = VacanciesState.LoadingMore
+         }
+ 
+         viewModelScope.launch {
+-            interactor.search(currentFilters)
++            val savedFilters = interactorFilters.getFiltersParameters()
++            val filters = savedFilters.toVacancyFilter(
++                text = currentQuery,
++                page = currentPage
++            )
++
++            Log.d("RequestFilters", "${filters.area} область, ${filters.industry} отрасль, ${filters.salary} зп, ${filters.onlyWithSalary} чекбокс")
++
++            Log.d("VacancyAPI", "Launching search with filters = $filters")
++            interactor.search(filters)
+                 .flowOn(Dispatchers.IO)
+                 .collect { resource ->
+                     isLoading = false
+@@ -95,6 +86,7 @@
+     }
+ 
+     private fun handleSuccess(resource: Resource.Success<VacanciesResult>, isNewSearch: Boolean) {
++        Log.d("VacancyAPI", "resource.data = ${resource.data}, isNewSearch = $isNewSearch")
+         resource.data?.let { result ->
+             hasMore = result.page < result.pages - 1
+             currentPage = result.page + 1
+Index: app/src/main/java/ru/practicum/android/diploma/data/mappers/MapperDto.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.data.mappers\r\n\r\nimport ru.practicum.android.diploma.data.models.areas.AreasResponseDto\r\nimport ru.practicum.android.diploma.data.models.industries.IndustryDto\r\nimport ru.practicum.android.diploma.data.models.storage.FilterParametersDto\r\nimport ru.practicum.android.diploma.data.models.vacancies.SalaryRangeDto\r\nimport ru.practicum.android.diploma.data.models.vacancies.VacanciesDto\r\nimport ru.practicum.android.diploma.data.models.vacancies.VacanciesRequest\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.EmploymentFormDto\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsResponseDto\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.WorkFormatDto\r\nimport ru.practicum.android.diploma.domain.models.filters.Region\r\nimport ru.practicum.android.diploma.domain.models.filters.Country\r\nimport ru.practicum.android.diploma.domain.models.filters.FilterParameters\r\nimport ru.practicum.android.diploma.domain.models.filters.Industry\r\nimport ru.practicum.android.diploma.domain.models.filters.VacancyFilters\r\nimport ru.practicum.android.diploma.domain.models.salary.Salary\r\nimport ru.practicum.android.diploma.domain.models.vacancies.Vacancy\r\nimport ru.practicum.android.diploma.domain.models.vacancydetails.EmploymentForm\r\nimport ru.practicum.android.diploma.domain.models.vacancydetails.EmploymentFormType\r\nimport ru.practicum.android.diploma.domain.models.vacancydetails.VacancyDetails\r\n\r\nfun VacanciesDto.toDomain(): Vacancy {\r\n    return Vacancy(\r\n        nameVacancy = name,\r\n        alternateUrl = alternateUrl,\r\n        id = id,\r\n        employerName = employer?.name,\r\n        logo = employer?.logoUrls?.logo90,\r\n        salary = salaryRange.toDomain(),\r\n        city = address?.city\r\n    )\r\n}\r\n\r\nfun VacancyDetailsResponseDto.toDomain(): VacancyDetails {\r\n    return VacancyDetails(\r\n        id = id,\r\n        name = name,\r\n        salary = salaryRange.toDomain(),\r\n        employer = employer?.name,\r\n        experience = experience?.name,\r\n        employmentForm = employmentForm.toDomain(),\r\n        description = description,\r\n        workFormat = workFormat?.mapNotNull { it.toDomain() },\r\n        alternateUrl = alternateUrl,\r\n        keySkills = keySkills?.map { it.name } ?: listOf(),\r\n        city = area.name,\r\n        logoUrl = employer?.logoUrls?.logo90\r\n    )\r\n}\r\n\r\nfun VacancyDetails.toVacancy(): Vacancy {\r\n    return Vacancy(\r\n        id = id,\r\n        alternateUrl = alternateUrl,\r\n        nameVacancy = name,\r\n        employerName = employer,\r\n        logo = logoUrl,\r\n        salary = salary,\r\n        city = city,\r\n        timestamp = System.currentTimeMillis()\r\n    )\r\n}\r\n\r\nfun AreasResponseDto.toDomain(): Country {\r\n    return Country(\r\n        id = id,\r\n        name = name,\r\n        parentId = parentId,\r\n    )\r\n}\r\n\r\nfun IndustryDto.toDomain(): Industry {\r\n    return Industry(\r\n        id = id,\r\n        name = name\r\n    )\r\n}\r\n\r\nfun FilterParametersDto.toDomain(): FilterParameters {\r\n    return FilterParameters(\r\n        countryName = countryName,\r\n        countryId = countryId,\r\n        regionName = regionName,\r\n        industryId = industryId,\r\n        industryName = industryName,\r\n        salary = salary,\r\n        checkboxWithoutSalary = checkboxWithoutSalary\r\n    )\r\n}\r\n\r\nfun FilterParameters.toDto(): FilterParametersDto {\r\n    return FilterParametersDto(\r\n        countryName = countryName,\r\n        countryId = countryId,\r\n        regionName = regionName,\r\n        industryId = industryId,\r\n        industryName = industryName,\r\n        salary = salary,\r\n        checkboxWithoutSalary = checkboxWithoutSalary\r\n    )\r\n}\r\n\r\nfun VacancyFilters.toDataRequest(): VacanciesRequest {\r\n    return VacanciesRequest(\r\n        text = text,\r\n        page = page,\r\n        perPage = perPage,\r\n        area = area,\r\n        industry = industry,\r\n        currency = currency,\r\n        salary = salary,\r\n        onlyWithSalary = onlyWithSalary\r\n    )\r\n}\r\n\r\nprivate fun SalaryRangeDto?.toDomain(): Salary {\r\n    if (this == null) return Salary.NotSpecifies\r\n\r\n    val from = this.from\r\n    val to = this.to\r\n    val currency = this.currency\r\n\r\n    return when {\r\n        from == null -> Salary.NotSpecifies\r\n        to == null -> Salary.From(from, currency)\r\n        to == from -> Salary.Fixed(from, currency)\r\n        else -> Salary.Range(from, to, currency)\r\n    }\r\n}\r\n\r\nfun EmploymentFormDto?.toDomain(): EmploymentForm? {\r\n    if (this == null || name.isNullOrBlank()) return null\r\n\r\n    val type = EmploymentFormType.fromId(this.id)\r\n    return EmploymentForm(\r\n        name = this.name,\r\n        requiresSuffix = type?.requiresSuffix == true\r\n    )\r\n}\r\n\r\nfun WorkFormatDto?.toDomain(): String? {\r\n    return this?.name?.takeIf { it.isNotBlank() }\r\n}\r\n\r\nfun AreasResponseDto.toRegion(): Region {\r\n    return Region(\r\n        id = this.id,\r\n        name = this.name,\r\n        countryName = this.countryName ?: \"\",\r\n        regionId = this.parentId,\r\n        countryId = this.parentId\r\n    )\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/data/mappers/MapperDto.kt b/app/src/main/java/ru/practicum/android/diploma/data/mappers/MapperDto.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/data/mappers/MapperDto.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/data/mappers/MapperDto.kt	(date 1753212105649)
+@@ -103,14 +103,14 @@
+ 
+ fun VacancyFilters.toDataRequest(): VacanciesRequest {
+     return VacanciesRequest(
+-        text = text,
+-        page = page,
+-        perPage = perPage,
+-        area = area,
+-        industry = industry,
+-        currency = currency,
+-        salary = salary,
+-        onlyWithSalary = onlyWithSalary
++        text = this.text,
++        page = this.page,
++        perPage = this.perPage,
++        area = this.area,
++        industry = this.industry,
++        currency = this.currency,
++        salary = this.salary,
++        onlyWithSalary = this.onlyWithSalary
+     )
+ }
+ 
+Index: app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesRequest.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.data.models.vacancies\r\n\r\ndata class VacanciesRequest(\r\n    val text: String,\r\n    val page: Int = 0,\r\n    val perPage: Int = 20,\r\n    val area: String? = null,\r\n    val industry: String? = null,\r\n    val currency: String? = null,\r\n    val salary: Int? = null,\r\n    val onlyWithSalary: Boolean = false\r\n)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesRequest.kt b/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesRequest.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesRequest.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesRequest.kt	(date 1753212105650)
+@@ -1,7 +1,7 @@
+ package ru.practicum.android.diploma.data.models.vacancies
+ 
+ data class VacanciesRequest(
+-    val text: String,
++    val text: String? = null,
+     val page: Int = 0,
+     val perPage: Int = 20,
+     val area: String? = null,
+Index: app/src/main/java/ru/practicum/android/diploma/data/filters/storage/impl/FilterParametersStorageImpl.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.data.filters.storage.impl\r\n\r\nimport android.content.SharedPreferences\r\nimport androidx.core.content.edit\r\nimport com.google.gson.Gson\r\nimport ru.practicum.android.diploma.data.filters.storage.api.FilterParametersStorage\r\nimport ru.practicum.android.diploma.data.models.storage.FilterParametersDto\r\n\r\nclass FilterParametersStorageImpl(\r\n    private val gson: Gson,\r\n    private val sharedPreferences: SharedPreferences\r\n) : FilterParametersStorage {\r\n\r\n    override fun putFilterParameters(params: FilterParametersDto) {\r\n        sharedPreferences.edit {\r\n            putString(FILTER_PARAMETERS_KEY, gson.toJson(params)).apply()\r\n        }\r\n    }\r\n\r\n    override fun getFilterParameters(): FilterParametersDto {\r\n        val json = sharedPreferences.getString(FILTER_PARAMETERS_KEY, null)\r\n        return if (json != null) {\r\n            gson.fromJson(json, FilterParametersDto::class.java)\r\n        } else {\r\n            FilterParametersDto()\r\n        }\r\n    }\r\n\r\n    override fun removeFilterParameters() {\r\n        sharedPreferences.edit {\r\n            remove(FILTER_PARAMETERS_KEY).apply()\r\n        }\r\n    }\r\n\r\n    companion object {\r\n        private const val FILTER_PARAMETERS_KEY = \"key_filter_parameters\"\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/data/filters/storage/impl/FilterParametersStorageImpl.kt b/app/src/main/java/ru/practicum/android/diploma/data/filters/storage/impl/FilterParametersStorageImpl.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/data/filters/storage/impl/FilterParametersStorageImpl.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/data/filters/storage/impl/FilterParametersStorageImpl.kt	(date 1753212105649)
+@@ -1,6 +1,7 @@
+ package ru.practicum.android.diploma.data.filters.storage.impl
+ 
+ import android.content.SharedPreferences
++import android.util.Log
+ import androidx.core.content.edit
+ import com.google.gson.Gson
+ import ru.practicum.android.diploma.data.filters.storage.api.FilterParametersStorage
+Index: app/src/main/java/ru/practicum/android/diploma/presentation/SearchFiltersViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.presentation\r\n\r\nimport android.util.Log\r\nimport androidx.lifecycle.LiveData\r\nimport androidx.lifecycle.MutableLiveData\r\nimport androidx.lifecycle.ViewModel\r\nimport ru.practicum.android.diploma.domain.filters.repository.FiltersParametersInteractor\r\nimport ru.practicum.android.diploma.domain.models.filters.FilterParameters\r\n\r\nclass SearchFiltersViewModel(\r\n    private val interactor: FiltersParametersInteractor\r\n) : ViewModel() {\r\n\r\n    private val _filtersParametersState = MutableLiveData<FilterParameters>()\r\n    val getFiltersParametersScreen: LiveData<FilterParameters> = _filtersParametersState\r\n\r\n    fun loadParameters() {\r\n        _filtersParametersState.value = interactor.getFiltersParameters()\r\n    }\r\n\r\n    fun clearWorkplace() {\r\n        interactor.selectCountry(null, null)\r\n        interactor.selectRegion(null)\r\n        loadParameters()\r\n    }\r\n\r\n    fun clearIndustry() {\r\n        interactor.selectIndustry(null, null)\r\n        loadParameters()\r\n    }\r\n\r\n    fun saveSalary(value: String?) {\r\n        interactor.defineSalary(value)\r\n    }\r\n\r\n    fun saveCheckBoxState(isChecked: Boolean) {\r\n        interactor.toggleWithoutSalary(isChecked)\r\n\r\n        val current = _filtersParametersState.value ?: FilterParameters()\r\n        _filtersParametersState.value = current.copy(checkboxWithoutSalary = isChecked)\r\n\r\n    }\r\n\r\n    fun resetFilters() {\r\n        interactor.clearFilters()\r\n        loadParameters()\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/presentation/SearchFiltersViewModel.kt b/app/src/main/java/ru/practicum/android/diploma/presentation/SearchFiltersViewModel.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/presentation/SearchFiltersViewModel.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/presentation/SearchFiltersViewModel.kt	(date 1753212105651)
+@@ -1,6 +1,5 @@
+ package ru.practicum.android.diploma.presentation
+ 
+-import android.util.Log
+ import androidx.lifecycle.LiveData
+ import androidx.lifecycle.MutableLiveData
+ import androidx.lifecycle.ViewModel
+Index: app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/impl/VacanciesRepositoryImpl.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.data.vacancysearchscreen.impl\r\n\r\nimport android.util.Log\r\nimport kotlinx.coroutines.flow.Flow\r\nimport kotlinx.coroutines.flow.flow\r\nimport ru.practicum.android.diploma.data.mappers.toDataRequest\r\nimport ru.practicum.android.diploma.data.mappers.toDomain\r\nimport ru.practicum.android.diploma.data.models.vacancies.VacanciesRequest\r\nimport ru.practicum.android.diploma.data.models.vacancies.VacanciesResponseDto\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsRequest\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsResponseDto\r\nimport ru.practicum.android.diploma.data.vacancysearchscreen.network.NetworkClient\r\nimport ru.practicum.android.diploma.domain.models.api.VacanciesRepository\r\nimport ru.practicum.android.diploma.domain.models.filters.VacancyFilters\r\nimport ru.practicum.android.diploma.domain.models.paging.VacanciesResult\r\nimport ru.practicum.android.diploma.domain.models.vacancydetails.VacancyDetails\r\nimport ru.practicum.android.diploma.util.DebounceConstants.NO_CONNECTION\r\nimport ru.practicum.android.diploma.util.DebounceConstants.SEARCH_SUCCESS\r\nimport ru.practicum.android.diploma.util.DebounceConstants.SERVER_ERROR\r\nimport ru.practicum.android.diploma.util.Resource\r\n\r\nclass VacanciesRepositoryImpl(private val networkClient: NetworkClient) : VacanciesRepository {\r\n\r\n    private val loadedPages = mutableSetOf<String>()\r\n    private var lastRequestKeyPrefix: String? = null\r\n\r\n    override fun search(vacancy: VacancyFilters): Flow<Resource<VacanciesResult>> = flow {\r\n        val request = vacancy.toDataRequest()\r\n\r\n        val requestKey = buildRequestKey(request)\r\n\r\n        val currentPrefixKey = buildRequestKeyPrefix(request)\r\n        if (currentPrefixKey != lastRequestKeyPrefix) {\r\n            loadedPages.clear()\r\n            lastRequestKeyPrefix = currentPrefixKey\r\n        }\r\n\r\n        if (requestKey in loadedPages) {\r\n            emit(Resource.Success(VacanciesResult(emptyList(), request.page, 0, 0)))\r\n            return@flow\r\n        }\r\n\r\n        try {\r\n            val response = networkClient.doRequest(request)\r\n            when (response.resultCode) {\r\n                SEARCH_SUCCESS -> {\r\n                    val dto = response as VacanciesResponseDto\r\n                    loadedPages.add(requestKey)\r\n\r\n                    val vacancies = dto.items.map { it.toDomain() }\r\n                    emit(\r\n                        Resource.Success(\r\n                            VacanciesResult(\r\n                                vacancies = vacancies,\r\n                                page = dto.page,\r\n                                pages = dto.pages,\r\n                                totalFound = dto.found\r\n                            )\r\n                        )\r\n                    )\r\n                }\r\n\r\n                NO_CONNECTION -> emit(Resource.Error(ErrorType.NO_INTERNET))\r\n                SERVER_ERROR -> emit(Resource.Error(ErrorType.SERVER_ERROR))\r\n                else -> emit(Resource.Error(ErrorType.UNKNOWN))\r\n            }\r\n        } catch (e: retrofit2.HttpException) {\r\n            Log.e(\"Repository\", \"HTTP error in search\", e)\r\n            throw e\r\n        }\r\n    }\r\n\r\n    override fun getVacancyDetailsById(id: String): Flow<Resource<VacancyDetails>> = flow {\r\n        val response = networkClient.doRequest(VacancyDetailsRequest(id))\r\n        when (response.resultCode) {\r\n            SEARCH_SUCCESS -> {\r\n                val data = (response as VacancyDetailsResponseDto).toDomain()\r\n                emit(Resource.Success(data))\r\n            }\r\n\r\n            NO_CONNECTION -> emit(Resource.Error(ErrorType.NO_INTERNET))\r\n            SERVER_ERROR -> emit(Resource.Error(ErrorType.SERVER_ERROR))\r\n            else -> emit(Resource.Error(ErrorType.UNKNOWN))\r\n        }\r\n    }\r\n\r\n    override fun clearLoadedPages() {\r\n        loadedPages.clear()\r\n    }\r\n\r\n    private fun buildRequestKey(request: VacanciesRequest): String {\r\n        return buildString {\r\n            append(\"page:${request.page}\")\r\n            append(\"|text:${request.text}\")\r\n            request.area?.let { append(\"|area:$it\") }\r\n            request.industry?.let { append(\"|industry:$it\") }\r\n            request.currency?.let { append(\"|currency:$it\") }\r\n            request.salary?.let { append(\"|salary:$it\") }\r\n        }\r\n    }\r\n\r\n    private fun buildRequestKeyPrefix(request: VacanciesRequest): String {\r\n        return buildString {\r\n            append(\"text:${request.text}\")\r\n            request.area?.let { append(\"|area:$it\") }\r\n            request.industry?.let { append(\"|industry:$it\") }\r\n            request.currency?.let { append(\"|currency:$it\") }\r\n            request.salary?.let { append(\"|salary:$it\") }\r\n        }\r\n    }\r\n}\r\n\r\nenum class ErrorType {\r\n    NO_INTERNET,\r\n    SERVER_ERROR,\r\n    UNKNOWN\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/impl/VacanciesRepositoryImpl.kt b/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/impl/VacanciesRepositoryImpl.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/impl/VacanciesRepositoryImpl.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/impl/VacanciesRepositoryImpl.kt	(date 1753212105650)
+@@ -47,6 +47,7 @@
+                     val dto = response as VacanciesResponseDto
+                     loadedPages.add(requestKey)
+ 
++                    Log.d("VacancyAPI", "dto.items = ${dto.items}")
+                     val vacancies = dto.items.map { it.toDomain() }
+                     emit(
+                         Resource.Success(
+Index: app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/network/RetrofitNetworkClient.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.data.vacancysearchscreen.network\r\n\r\nimport android.content.Context\r\nimport android.util.Log\r\nimport kotlinx.coroutines.Dispatchers\r\nimport kotlinx.coroutines.withContext\r\nimport ru.practicum.android.diploma.data.models.areas.AreaWithSubareasDto\r\nimport ru.practicum.android.diploma.data.models.areas.AreasApi\r\nimport ru.practicum.android.diploma.data.models.areas.AreasResponseDto\r\nimport ru.practicum.android.diploma.data.models.areas.country.CountriesRequest\r\nimport ru.practicum.android.diploma.data.models.areas.country.CountriesResponseDto\r\nimport ru.practicum.android.diploma.data.models.areas.regions.RegionsRequest\r\nimport ru.practicum.android.diploma.data.models.areas.regions.RegionsResponseDto\r\nimport ru.practicum.android.diploma.data.models.industries.IndustriesApi\r\nimport ru.practicum.android.diploma.data.models.industries.remote.IndustryRequest\r\nimport ru.practicum.android.diploma.data.models.industries.remote.IndustryResponseDto\r\nimport ru.practicum.android.diploma.data.models.vacancies.Response\r\nimport ru.practicum.android.diploma.data.models.vacancies.VacanciesApi\r\nimport ru.practicum.android.diploma.data.models.vacancies.VacanciesRequest\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsApi\r\nimport ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsRequest\r\nimport ru.practicum.android.diploma.util.NetworkHelper.isConnected\r\n\r\nclass RetrofitNetworkClient(\r\n    private val service: VacanciesApi,\r\n    private val vacancyService: VacancyDetailsApi,\r\n    private val countryService: AreasApi,\r\n    private val industriesApi: IndustriesApi,\r\n    private val context: Context\r\n) : NetworkClient {\r\n    override suspend fun doRequest(dto: Any): Response {\r\n        return if (!isConnected(context)) {\r\n            createNoConnectionResponse()\r\n        } else {\r\n            handleRequest(dto)\r\n        }\r\n    }\r\n\r\n    private suspend fun handleRequest(dto: Any): Response {\r\n        return when (dto) {\r\n            is VacanciesRequest -> handleVacancyRequest(dto)\r\n            is VacancyDetailsRequest -> handleVacancyDetailsRequest(dto)\r\n            is CountriesRequest -> handleCountriesRequest()\r\n            is IndustryRequest -> handleIndustriesRequest()\r\n            is RegionsRequest -> handleRegionsRequest(dto)\r\n            else -> createFailedResponse()\r\n        }\r\n    }\r\n\r\n    private suspend fun handleVacancyRequest(dto: VacanciesRequest): Response = withContext(Dispatchers.IO) {\r\n        try {\r\n            val response = service.getVacancies(\r\n                text = dto.text,\r\n                page = dto.page,\r\n                perPage = dto.perPage,\r\n                area = dto.area,\r\n                industry = dto.industry,\r\n                currency = dto.currency,\r\n                salary = dto.salary\r\n            )\r\n            Log.d(\"Requestfilter\", \"${dto.salary} network\")\r\n            response.apply { resultCode = REQUEST_SUCCESS }\r\n        } catch (e: retrofit2.HttpException) {\r\n            Log.e(\"Repository\", \"Error getting vacancies\", e)\r\n            createServerErrorResponse()\r\n        }\r\n    }\r\n\r\n    private suspend fun handleVacancyDetailsRequest(\r\n        dto: VacancyDetailsRequest\r\n    ): Response = withContext(Dispatchers.IO) {\r\n        try {\r\n            val response = vacancyService.getVacancyDetails(id = dto.id)\r\n            response.apply { resultCode = REQUEST_SUCCESS }\r\n        } catch (e: retrofit2.HttpException) {\r\n            Log.e(\"Repository\", \"Error getting details vacancies\", e)\r\n            createServerErrorResponse()\r\n        }\r\n    }\r\n\r\n    private suspend fun handleCountriesRequest(): Response = withContext(Dispatchers.IO) {\r\n        try {\r\n            val response = countryService.getCountries()\r\n            CountriesResponseDto(response).apply {\r\n                resultCode = REQUEST_SUCCESS\r\n            }\r\n        } catch (e: retrofit2.HttpException) {\r\n            Log.e(\"Repository\", \"Error getting countries list\", e)\r\n            createServerErrorResponse()\r\n        }\r\n    }\r\n\r\n    private suspend fun handleIndustriesRequest(): Response = withContext(Dispatchers.IO) {\r\n        try {\r\n            val response = industriesApi.getIndustries()\r\n            IndustryResponseDto(response).apply {\r\n                resultCode = REQUEST_SUCCESS\r\n            }\r\n        } catch (e: retrofit2.HttpException) {\r\n            Log.e(\"Repository\", \"Error getting details vacancies\", e)\r\n            createServerErrorResponse()\r\n        }\r\n    }\r\n\r\n    private suspend fun handleRegionsRequest(dto: RegionsRequest): Response =\r\n        withContext(Dispatchers.IO) {\r\n            try {\r\n                val response = if (dto.countryId.isBlank()) {\r\n                    getAllCitiesResponse()\r\n                } else {\r\n                    getCitiesByCountryResponse(dto.countryId)\r\n                }\r\n\r\n                RegionsResponseDto(response.areas).apply {\r\n                    resultCode = REQUEST_SUCCESS\r\n                }\r\n            } catch (e: retrofit2.HttpException) {\r\n                Log.e(\"Repository\", \"Error getting cities list\", e)\r\n                createServerErrorResponse()\r\n            }\r\n        }\r\n\r\n    private suspend fun getAllCitiesResponse(): AreaWithSubareasDto {\r\n        val countries = countryService.getCountries()\r\n        val allCities = countries.flatMap { country ->\r\n            processRegions(countryService.getRegions(country.id).areas, country.name)\r\n        }\r\n        return AreaWithSubareasDto(id = \"\", name = \"All cities\", areas = allCities)\r\n    }\r\n\r\n    private suspend fun getCitiesByCountryResponse(countryId: String): AreaWithSubareasDto {\r\n        val country = countryService.getCountries().firstOrNull { it.id == countryId }\r\n        val countryName = country?.name ?: \"\"\r\n        val regions = countryService.getRegions(countryId).areas\r\n        val resultAreas = processRegions(regions, countryName)\r\n        return AreaWithSubareasDto(id = countryId, name = \"Cities\", areas = resultAreas)\r\n    }\r\n\r\n    // Общий метод для обработки регионов и городов\r\n    private fun processRegions(\r\n        regions: List<AreasResponseDto>,\r\n        countryName: String\r\n    ): List<AreasResponseDto> {\r\n        return regions.flatMap { region ->\r\n            if (region.areas.isNotEmpty()) {\r\n                region.areas.map { city -> city.copy(countryName = countryName) }\r\n            } else {\r\n                listOf(region.copy(countryName = countryName))\r\n            }\r\n        }\r\n    }\r\n\r\n    private fun createServerErrorResponse() = Response().apply { resultCode = SERVER_ERROR }\r\n    private fun createFailedResponse() = Response().apply { resultCode = REQUEST_FAILED }\r\n    private fun createNoConnectionResponse() = Response().apply { resultCode = NO_CONNECTION }\r\n\r\n    companion object {\r\n        private const val NO_CONNECTION = -1\r\n        private const val REQUEST_SUCCESS = 2\r\n        private const val REQUEST_FAILED = 1\r\n        private const val SERVER_ERROR = 5\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/network/RetrofitNetworkClient.kt b/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/network/RetrofitNetworkClient.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/network/RetrofitNetworkClient.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/data/vacancysearchscreen/network/RetrofitNetworkClient.kt	(date 1753212105651)
+@@ -58,7 +58,6 @@
+                 currency = dto.currency,
+                 salary = dto.salary
+             )
+-            Log.d("Requestfilter", "${dto.salary} network")
+             response.apply { resultCode = REQUEST_SUCCESS }
+         } catch (e: retrofit2.HttpException) {
+             Log.e("Repository", "Error getting vacancies", e)
+Index: app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesApi.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.data.models.vacancies\r\n\r\nimport retrofit2.http.GET\r\nimport retrofit2.http.Headers\r\nimport retrofit2.http.Query\r\n\r\ninterface VacanciesApi {\r\n    @Headers(\"HH-User-Agent: WorkNest/1.0 (danilov-av2004@mail.ru)\")\r\n    @GET(\"vacancies\")\r\n    suspend fun getVacancies(\r\n        @Query(\"page\") page: Int = 0,\r\n        @Query(\"per_page\") perPage: Int = 20,\r\n        @Query(\"text\") text: String,\r\n        @Query(\"area\") area: String? = null,\r\n        @Query(\"industry\") industry: String? = null,\r\n        @Query(\"currency\") currency: String? = null,\r\n        @Query(\"salary\") salary: Int? = null\r\n    ): VacanciesResponseDto\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesApi.kt b/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesApi.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesApi.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/data/models/vacancies/VacanciesApi.kt	(date 1753212105649)
+@@ -10,7 +10,7 @@
+     suspend fun getVacancies(
+         @Query("page") page: Int = 0,
+         @Query("per_page") perPage: Int = 20,
+-        @Query("text") text: String,
++        @Query("text") text: String? = null,
+         @Query("area") area: String? = null,
+         @Query("industry") industry: String? = null,
+         @Query("currency") currency: String? = null,
+Index: app/src/main/java/ru/practicum/android/diploma/ui/searchfilters/SearchFiltersFragment.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package ru.practicum.android.diploma.ui.searchfilters\r\n\r\nimport android.os.Bundle\r\nimport android.view.LayoutInflater\r\nimport android.view.View\r\nimport android.view.ViewGroup\r\nimport androidx.core.content.ContextCompat\r\nimport androidx.core.view.isVisible\r\nimport androidx.core.widget.doOnTextChanged\r\nimport androidx.fragment.app.Fragment\r\nimport androidx.fragment.app.setFragmentResult\r\nimport androidx.navigation.fragment.findNavController\r\nimport org.koin.androidx.viewmodel.ext.android.viewModel\r\nimport ru.practicum.android.diploma.R\r\nimport ru.practicum.android.diploma.databinding.SearchFiltersFragmentBinding\r\nimport ru.practicum.android.diploma.domain.models.filters.FilterParameters\r\nimport ru.practicum.android.diploma.presentation.SearchFiltersViewModel\r\nimport ru.practicum.android.diploma.util.getThemeColor\r\nimport ru.practicum.android.diploma.util.hideKeyboardOnDone\r\nimport ru.practicum.android.diploma.util.hideKeyboardOnIconClose\r\nimport ru.practicum.android.diploma.util.renderFilterField\r\n\r\nclass SearchFiltersFragment : Fragment() {\r\n\r\n    private var _binding: SearchFiltersFragmentBinding? = null\r\n    private val binding get() = _binding!!\r\n\r\n    private val viewModel by viewModel<SearchFiltersViewModel>()\r\n\r\n    private var themeColor: Int = 0\r\n\r\n    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {\r\n        _binding = SearchFiltersFragmentBinding.inflate(inflater, container, false)\r\n        return binding.root\r\n    }\r\n\r\n    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {\r\n        super.onViewCreated(view, savedInstanceState)\r\n\r\n        themeColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorOnContainer)\r\n\r\n        binding.editTextWorkplace.setOnClickListener {\r\n            findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment)\r\n        }\r\n\r\n        binding.editTextIndustry.setOnClickListener {\r\n            findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment)\r\n        }\r\n\r\n        binding.icon.setOnClickListener {\r\n            binding.editText.setText(\"\")\r\n            binding.editText.clearFocus()\r\n            binding.topHint.setTextColor(themeColor)\r\n            viewModel.saveSalary(\"\")\r\n            showActionButtons()\r\n            binding.editText.hideKeyboardOnIconClose(requireContext())\r\n        }\r\n\r\n        binding.editText.doOnTextChanged { text, start, before, count ->\r\n            val query = text?.toString()?.trim().orEmpty()\r\n\r\n            viewModel.saveSalary(query)\r\n            binding.icon.isVisible = query.isNotEmpty()\r\n            binding.btnApply.isVisible = query.isNotEmpty()\r\n            binding.btnCancel.isVisible = query.isNotEmpty()\r\n        }\r\n\r\n        binding.editText.setOnFocusChangeListener { v, hasFocus ->\r\n            val color = if (hasFocus) {\r\n                ContextCompat.getColor(requireContext(), R.color.blue)\r\n            } else {\r\n                val currentText = binding.editText.text.toString()\r\n                if (currentText.isEmpty()) {\r\n                    themeColor\r\n                } else {\r\n                    ContextCompat.getColor(requireContext(), R.color.black)\r\n                }\r\n            }\r\n            binding.topHint.setTextColor(color)\r\n        }\r\n\r\n        binding.editText.hideKeyboardOnDone(requireContext())\r\n\r\n        binding.arrowBack.setOnClickListener {\r\n            findNavController().popBackStack()\r\n        }\r\n\r\n        binding.inputLayoutWorkplace.setEndIconOnClickListener {\r\n            viewModel.clearWorkplace()\r\n        }\r\n\r\n        binding.inputLayoutIndustry.setEndIconOnClickListener {\r\n            viewModel.clearIndustry()\r\n        }\r\n\r\n        binding.btnCancel.setOnClickListener {\r\n            binding.editText.setText(\"\")\r\n            binding.materialCheckbox.isChecked = false\r\n            viewModel.resetFilters()\r\n        }\r\n\r\n        binding.btnApply.setOnClickListener {\r\n            val currentSelectedFilters = viewModel.getFiltersParametersScreen.value?.copy(\r\n                salary = binding.editText.text.toString(),\r\n                checkboxWithoutSalary = binding.materialCheckbox.isChecked\r\n            ) ?: FilterParameters(\r\n                salary = binding.editText.text.toString(),\r\n                checkboxWithoutSalary = binding.materialCheckbox.isChecked\r\n            )\r\n\r\n            val bundle = Bundle().apply {\r\n                putParcelable(SEARCH_WITH_FILTERS_KEY, currentSelectedFilters)\r\n            }\r\n            setFragmentResult(SEARCH_WITH_FILTERS_KEY, bundle)\r\n            findNavController().popBackStack()\r\n        }\r\n\r\n        viewModel.getFiltersParametersScreen.observe(viewLifecycleOwner) {\r\n            renderWorkplace(it)\r\n        }\r\n\r\n        viewModel.loadParameters()\r\n\r\n        binding.materialCheckbox.setOnCheckedChangeListener { _, isChecked ->\r\n            viewModel.saveCheckBoxState(isChecked)\r\n            showActionButtons()\r\n        }\r\n    }\r\n\r\n    override fun onDestroyView() {\r\n        super.onDestroyView()\r\n        _binding = null\r\n    }\r\n\r\n    private fun renderWorkplace(state: FilterParameters) {\r\n        val country = state.countryName\r\n        val region = state.regionName\r\n        val industry = state.industryName\r\n        val gray = ContextCompat.getColor(requireContext(), R.color.gray)\r\n\r\n        val workplaceText = listOfNotNull(country, region)\r\n            .filter { it.isNotBlank() }\r\n            .joinToString(\", \")\r\n\r\n        binding.inputLayoutWorkplace.renderFilterField(\r\n            context = requireContext(),\r\n            text = workplaceText,\r\n            hintResId = R.string.workplace,\r\n            grayColor = gray\r\n        )\r\n\r\n        binding.inputLayoutIndustry.renderFilterField(\r\n            context = requireContext(),\r\n            text = industry,\r\n            hintResId = R.string.industry,\r\n            grayColor = gray\r\n        )\r\n\r\n        val hasSalary = !state.salary.isNullOrBlank()\r\n        val topHintColor = if (hasSalary) ContextCompat.getColor(requireContext(), R.color.black) else themeColor\r\n        binding.topHint.setTextColor(topHintColor)\r\n        binding.editText.setText(state.salary)\r\n\r\n        binding.materialCheckbox.isChecked = state.checkboxWithoutSalary ?: false\r\n\r\n        updateActionButtonVisibility()\r\n    }\r\n\r\n    private fun updateActionButtonVisibility() {\r\n        val filters = viewModel.getFiltersParametersScreen.value ?: return\r\n\r\n        val isWorkplaceEmpty = filters.countryName.isNullOrBlank() && filters.regionName.isNullOrBlank()\r\n        val isIndustryEmpty = filters.industryName.isNullOrBlank()\r\n        val hasSalary = !filters.salary.isNullOrBlank()\r\n        val hasCheckbox = filters.checkboxWithoutSalary\r\n\r\n        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || hasSalary || hasCheckbox!!\r\n\r\n        binding.btnApply.isVisible = hasAnyFilters\r\n        binding.btnCancel.isVisible = hasAnyFilters\r\n    }\r\n\r\n    private fun showActionButtons() {\r\n        binding.btnApply.isVisible = true\r\n        binding.btnCancel.isVisible = true\r\n    }\r\n\r\n    companion object {\r\n        const val SEARCH_WITH_FILTERS_KEY = \"search_with_filters_key\"\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/ru/practicum/android/diploma/ui/searchfilters/SearchFiltersFragment.kt b/app/src/main/java/ru/practicum/android/diploma/ui/searchfilters/SearchFiltersFragment.kt
+--- a/app/src/main/java/ru/practicum/android/diploma/ui/searchfilters/SearchFiltersFragment.kt	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/app/src/main/java/ru/practicum/android/diploma/ui/searchfilters/SearchFiltersFragment.kt	(date 1753212105652)
+@@ -1,6 +1,7 @@
+ package ru.practicum.android.diploma.ui.searchfilters
+ 
+ import android.os.Bundle
++import android.util.Log
+ import android.view.LayoutInflater
+ import android.view.View
+ import android.view.ViewGroup
+@@ -29,7 +30,7 @@
+ 
+     private var themeColor: Int = 0
+ 
+-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
++    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+         _binding = SearchFiltersFragmentBinding.inflate(inflater, container, false)
+         return binding.root
+     }
+@@ -100,14 +101,8 @@
+         }
+ 
+         binding.btnApply.setOnClickListener {
+-            val currentSelectedFilters = viewModel.getFiltersParametersScreen.value?.copy(
+-                salary = binding.editText.text.toString(),
+-                checkboxWithoutSalary = binding.materialCheckbox.isChecked
+-            ) ?: FilterParameters(
+-                salary = binding.editText.text.toString(),
+-                checkboxWithoutSalary = binding.materialCheckbox.isChecked
+-            )
+-
++            val currentSelectedFilters = viewModel.getFiltersParametersScreen.value
++            Log.d("RequestFilters", "search filters fragment: ${currentSelectedFilters?.salary}, ${currentSelectedFilters?.countryName}, ${currentSelectedFilters?.industryName}, ${currentSelectedFilters?.checkboxWithoutSalary}")
+             val bundle = Bundle().apply {
+                 putParcelable(SEARCH_WITH_FILTERS_KEY, currentSelectedFilters)
+             }
+Index: .idea/deploymentTargetSelector.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"deploymentTargetSelector\">\r\n    <selectionStates>\r\n      <SelectionState runConfigName=\"app\">\r\n        <option name=\"selectionMode\" value=\"DROPDOWN\" />\r\n        <DropdownSelection timestamp=\"2025-07-21T02:08:10.343080400Z\">\r\n          <Target type=\"DEFAULT_BOOT\">\r\n            <handle>\r\n              <DeviceId pluginId=\"PhysicalDevice\" identifier=\"serial=b38969d\" />\r\n            </handle>\r\n          </Target>\r\n        </DropdownSelection>\r\n        <DialogSelection />\r\n      </SelectionState>\r\n    </selectionStates>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/deploymentTargetSelector.xml b/.idea/deploymentTargetSelector.xml
+--- a/.idea/deploymentTargetSelector.xml	(revision 19a398e37a7195c8402fcb3a0bd83393b353f347)
++++ b/.idea/deploymentTargetSelector.xml	(date 1753212105648)
+@@ -4,10 +4,10 @@
+     <selectionStates>
+       <SelectionState runConfigName="app">
+         <option name="selectionMode" value="DROPDOWN" />
+-        <DropdownSelection timestamp="2025-07-21T02:08:10.343080400Z">
++        <DropdownSelection timestamp="2025-07-22T17:37:56.139915900Z">
+           <Target type="DEFAULT_BOOT">
+             <handle>
+-              <DeviceId pluginId="PhysicalDevice" identifier="serial=b38969d" />
++              <DeviceId pluginId="LocalEmulator" identifier="path=D:\Android\android_sdk_home\.android\avd\Pixel_6_API_33.avd" />
+             </handle>
+           </Target>
+         </DropdownSelection>
