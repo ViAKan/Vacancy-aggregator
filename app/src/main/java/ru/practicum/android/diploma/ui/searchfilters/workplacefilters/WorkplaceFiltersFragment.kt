@@ -41,7 +41,7 @@ class WorkplaceFiltersFragment : Fragment() {
                 SelectionType.REGION -> {
                     val regionName = bundle.getString(REGION_NAME_KEY)
                     val regionId = bundle.getString(REGION_ID_KEY)
-                    viewModel.setTempRegionSelection(regionName, regionId ,countryName)
+                    viewModel.setTempRegionSelection(regionName, regionId, countryName)
                 }
 
                 null -> Unit

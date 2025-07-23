@@ -29,7 +29,7 @@ class WorkplaceFiltersViewModel(
         _tempCountry.postValue(TempLocation(id, name))
     }
 
-    fun setTempRegionSelection(regionName: String?, regionId: String? ,countryName: String?) {
+    fun setTempRegionSelection(regionName: String?, regionId: String?, countryName: String?) {
         tempSelectedRegion = regionName
         _tempRegion.postValue(TempLocation(id = regionId, name = regionName))
         if (countryName != null) {
