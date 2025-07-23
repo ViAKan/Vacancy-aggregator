@@ -16,14 +16,14 @@ class FiltersParametersInteractorImpl(
         return repository.getFiltersParameters().countryId
     }
 
-    override fun selectRegion(regionName: String?, countryName: String?) {
+    override fun selectRegion(regionName: String?, regionId: String? ,countryName: String?) {
         val currentParams = repository.getFiltersParameters()
 
         if (!countryName.isNullOrBlank() && currentParams.countryName.isNullOrBlank()) {
             repository.selectCountry(countryName, null)
         }
 
-        repository.selectRegion(regionName)
+        repository.selectRegion(regionName, regionId)
     }
 
     override fun selectIndustry(industryId: String?, industryName: String?) {

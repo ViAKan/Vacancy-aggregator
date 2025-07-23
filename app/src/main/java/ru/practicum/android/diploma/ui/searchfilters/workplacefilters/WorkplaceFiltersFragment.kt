@@ -40,7 +40,8 @@ class WorkplaceFiltersFragment : Fragment() {
 
                 SelectionType.REGION -> {
                     val regionName = bundle.getString(REGION_NAME_KEY)
-                    viewModel.setTempRegionSelection(regionName, countryName)
+                    val regionId = bundle.getString(REGION_ID_KEY)
+                    viewModel.setTempRegionSelection(regionName, regionId ,countryName)
                 }
 
                 null -> Unit
@@ -104,7 +105,7 @@ class WorkplaceFiltersFragment : Fragment() {
 
     private fun updateCountryView() {
         val tempCountry = viewModel.getTempCountry.value?.name
-        val tempRegion = viewModel.getTempRegion.value
+        val tempRegion = viewModel.getTempRegion.value?.name
         val savedParams = viewModel.getSelectedParams.value
 
         val countryName = tempCountry ?: savedParams?.countryName
@@ -157,6 +158,7 @@ class WorkplaceFiltersFragment : Fragment() {
         const val COUNTRY_NAME_KEY = "country_name"
         const val COUNTRY_ID_KEY = "country_id"
         const val REGION_NAME_KEY = "region_name"
+        const val REGION_ID_KEY = "region_id"
         const val SELECTION_RESULT_KEY = "result_key"
     }
 }
