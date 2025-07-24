@@ -17,7 +17,6 @@ import ru.practicum.android.diploma.domain.models.vacancies.Vacancy
 import ru.practicum.android.diploma.domain.models.vacancydetails.EmploymentForm
 import ru.practicum.android.diploma.domain.models.vacancydetails.EmploymentFormType
 import ru.practicum.android.diploma.domain.models.vacancydetails.VacancyDetails
-import ru.practicum.android.diploma.util.ResponseType
 
 fun VacanciesDto.toDomain(): Vacancy {
     return Vacancy(
