@@ -95,10 +95,6 @@ fun Fragment.setupInputField(
     }
 
     editText.setOnClickListener {
-        if (editText.text.isNullOrBlank()) {
-            navigateAction()
-        } else {
-            navigateAction()
-        }
+        navigateAction()
     }
 }
