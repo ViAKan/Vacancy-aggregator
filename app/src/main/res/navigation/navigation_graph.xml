@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navigation_graph"
     app:startDestination="@id/vacancySearchFragment">
 
     <fragment
         android:id="@+id/searchFiltersFragment"
         android:name="ru.practicum.android.diploma.ui.searchfilters.SearchFiltersFragment"
-        android:label="SearchFiltersFragment" />
+        android:label="SearchFiltersFragment" >
+        <action
+            android:id="@+id/action_searchFiltersFragment_to_workplaceFiltersFragment"
+            app:destination="@id/workplaceFiltersFragment" />
+        <action
+            android:id="@+id/action_searchFiltersFragment_to_industryFilterFragment"
+            app:destination="@id/industryFilterFragment" />
+    </fragment>
     <fragment
         android:id="@+id/aboutFragment"
         android:name="ru.practicum.android.diploma.ui.about.AboutFragment"
@@ -39,5 +47,36 @@
             android:name="vacancyId"
             app:argType="string"
             app:nullable="false" />
+    </fragment>
+    <fragment
+        android:id="@+id/workplaceFiltersFragment"
+        android:name="ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment"
+        android:label="workplace_fragment"
+        tools:layout="@layout/workplace_fragment" >
+        <action
+            android:id="@+id/action_workplaceFiltersFragment_to_countryFiltersFragment"
+            app:destination="@id/countryFiltersFragment" />
+        <action
+            android:id="@+id/action_workplaceFiltersFragment_to_regionsFilterFragment"
+            app:destination="@id/regionsFilterFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/countryFiltersFragment"
+        android:name="ru.practicum.android.diploma.ui.searchfilters.countryfilters.CountryFiltersFragment"
+        android:label="CountryFiltersFragment"
+        tools:layout="@layout/workplace_fragment" />
+    <fragment
+        android:id="@+id/industryFilterFragment"
+        android:name="ru.practicum.android.diploma.ui.searchfilters.industryfilter.IndustryFilterFragment"
+        android:label="industries_filter_fragment"
+        tools:layout="@layout/industries_filter_fragment" />
+    <fragment
+        android:id="@+id/regionsFilterFragment"
+        android:name="ru.practicum.android.diploma.ui.searchfilters.regionsfilter.RegionsFilterFragment"
+        android:label="RegionsFilterFragment">
+        <argument
+            android:name="countryId"
+            app:argType="string"
+            android:defaultValue=""/>
     </fragment>
 </navigation>
