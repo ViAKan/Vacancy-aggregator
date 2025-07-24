@@ -35,6 +35,9 @@ class SearchFiltersViewModel(
 
     fun saveSalary(value: String?) {
         interactor.defineSalary(value)
+
+        val current = _filtersParametersState.value ?: FilterParameters()
+        _filtersParametersState.value = current.copy(salary = value)
     }
 
     fun saveCheckBoxState(isChecked: Boolean) {

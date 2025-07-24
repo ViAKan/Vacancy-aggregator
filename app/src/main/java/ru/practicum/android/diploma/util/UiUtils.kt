@@ -95,8 +95,6 @@ fun Fragment.setupInputField(
     }
 
     editText.setOnClickListener {
-        if (editText.text.isNullOrBlank()) {
-            findNavController().navigate(navActionId)
-        }
+        findNavController().navigate(navActionId)
     }
 }

@@ -129,9 +129,15 @@ class SearchFiltersFragment : Fragment() {
         val gray = ContextCompat.getColor(requireContext(), R.color.gray)
 
         val currentText = binding.editText.text.toString()
-        if (currentText != state.salary) {
-            binding.editText.setText(state.salary)
+        val newSalary = state.salary.orEmpty()
+
+        if (currentText != newSalary) {
+            binding.editText.setText(newSalary)
         }
+
+        binding.materialCheckbox.isChecked = state.checkboxWithoutSalary ?: false
+
+        updateActionButtonVisibility()
 
         val workplaceText = listOfNotNull(country, region)
             .filter { it.isNotBlank() }
@@ -154,11 +160,6 @@ class SearchFiltersFragment : Fragment() {
         val hasSalary = !state.salary.isNullOrBlank()
         val topHintColor = if (hasSalary) ContextCompat.getColor(requireContext(), R.color.black) else themeColor
         binding.topHint.setTextColor(topHintColor)
-        binding.editText.setText(state.salary)
-
-        binding.materialCheckbox.isChecked = state.checkboxWithoutSalary ?: false
-
-        updateActionButtonVisibility()
     }
 
     private fun updateActionButtonVisibility() {
@@ -166,10 +167,10 @@ class SearchFiltersFragment : Fragment() {
 
         val isWorkplaceEmpty = filters.countryName.isNullOrBlank() && filters.regionName.isNullOrBlank()
         val isIndustryEmpty = filters.industryName.isNullOrBlank()
-        val hasSalary = !filters.salary.isNullOrBlank()
+        val hasSalary = filters.salary.isNullOrBlank()
         val hasCheckbox = filters.checkboxWithoutSalary ?: false
 
-        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || hasSalary || hasCheckbox
+        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || !hasSalary || hasCheckbox
 
         binding.btnApply.isVisible = hasAnyFilters
         binding.btnCancel.isVisible = hasAnyFilters

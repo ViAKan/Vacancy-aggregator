@@ -93,6 +93,8 @@
         <item name="boxBackgroundMode">filled</item>
         <item name="endIconDrawable">@drawable/arrow_forward_24px</item>
         <item name="endIconMode">custom</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
         <item name="endIconTint">?attr/colorOnPrimary</item>
         <item name="hintTextAppearance">@style/TextRegular16</item>
     </style>
@@ -101,7 +103,7 @@
         <item name="android:paddingVertical">@dimen/dimen_20dp</item>
         <item name="android:textAppearance">@style/TextRegular16</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
-        <item name="android:clickable">true</item>
+        <item name="android:clickable">false</item>
         <item name="android:focusable">false</item>
         <item name="android:inputType">none</item>
         <item name="android:longClickable">false</item>
