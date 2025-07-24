@@ -20,6 +20,7 @@ import ru.practicum.android.diploma.presentation.regionsfilterscreen.RegionFilte
 import ru.practicum.android.diploma.presentation.regionsfilterscreen.RegionsFiltersUiState
 import ru.practicum.android.diploma.ui.searchfilters.recycleview.RegionsAdapter
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.COUNTRY_NAME_KEY
+import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.REGION_ID_KEY
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.REGION_NAME_KEY
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.SELECTION_RESULT_KEY
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.SELECTION_TYPE_KEY
@@ -70,6 +71,7 @@ class RegionsFilterFragment : Fragment(), RegionsAdapter.OnClickListener {
             putString(SELECTION_TYPE_KEY, SelectionType.REGION.value)
             putString(COUNTRY_NAME_KEY, region.countryName)
             putString(REGION_NAME_KEY, region.name)
+            putString(REGION_ID_KEY, region.id)
         }
         setFragmentResult(SELECTION_RESULT_KEY, result)
         findNavController().popBackStack()

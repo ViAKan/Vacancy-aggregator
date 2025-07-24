@@ -55,6 +55,7 @@ class RetrofitNetworkClient(
                 perPage = dto.perPage,
                 filter = dto.filter,
             )
+            Log.d("RequestFilters", "${dto.filter}")
             response.apply { resultCode = REQUEST_SUCCESS }
         } catch (e: retrofit2.HttpException) {
             Log.e("Repository", "Error getting vacancies", e)

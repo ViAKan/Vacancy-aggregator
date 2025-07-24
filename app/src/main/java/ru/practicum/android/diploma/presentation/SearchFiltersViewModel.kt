@@ -19,12 +19,17 @@ class SearchFiltersViewModel(
 
     fun clearWorkplace() {
         interactor.selectCountry(null, null)
-        interactor.selectRegion(null)
+        interactor.selectRegion(null, null)
         loadParameters()
     }
 
     fun clearIndustry() {
         interactor.selectIndustry(null, null)
+        loadParameters()
+    }
+
+    fun clearSalary() {
+        interactor.defineSalary(null)
         loadParameters()
     }
 

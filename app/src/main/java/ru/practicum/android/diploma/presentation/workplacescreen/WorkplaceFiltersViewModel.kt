@@ -13,8 +13,8 @@ class WorkplaceFiltersViewModel(
     private val _tempCountry = MutableLiveData<TempLocation?>()
     val getTempCountry: LiveData<TempLocation?> = _tempCountry
 
-    private val _tempRegion = MutableLiveData<String?>()
-    val getTempRegion: LiveData<String?> = _tempRegion
+    private val _tempRegion = MutableLiveData<TempLocation?>()
+    val getTempRegion: LiveData<TempLocation?> = _tempRegion
 
     private val _paramsSelectedState = MutableLiveData<FilterParameters>()
     val getSelectedParams: LiveData<FilterParameters> = _paramsSelectedState
@@ -29,9 +29,9 @@ class WorkplaceFiltersViewModel(
         _tempCountry.postValue(TempLocation(id, name))
     }
 
-    fun setTempRegionSelection(regionName: String?, countryName: String?) {
+    fun setTempRegionSelection(regionName: String?, regionId: String?, countryName: String?) {
         tempSelectedRegion = regionName
-        _tempRegion.postValue(regionName)
+        _tempRegion.postValue(TempLocation(id = regionId, name = regionName))
         if (countryName != null) {
             setTempCountrySelection(_tempCountry.value?.id, countryName)
         }
@@ -42,7 +42,7 @@ class WorkplaceFiltersViewModel(
             interactor.selectCountry(it.name, it.id)
         }
         _tempRegion.value?.let {
-            interactor.selectRegion(it)
+            interactor.selectRegion(it.name, it.id)
         }
     }
 
@@ -54,7 +54,7 @@ class WorkplaceFiltersViewModel(
             _tempCountry.value = TempLocation(params.countryId, params.countryName)
         }
         if (_tempRegion.value == null) {
-            _tempRegion.value = params.regionName
+            _tempRegion.value = TempLocation(params.regionId, params.regionName)
         }
     }
 

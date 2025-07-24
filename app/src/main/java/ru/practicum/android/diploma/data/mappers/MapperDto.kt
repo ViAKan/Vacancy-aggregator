@@ -80,6 +80,7 @@ fun FilterParametersDto.toDomain(): FilterParameters {
         countryName = countryName,
         countryId = countryId,
         regionName = regionName,
+        regionId = regionId,
         industryId = industryId,
         industryName = industryName,
         salary = salary,
@@ -92,6 +93,7 @@ fun FilterParameters.toDto(): FilterParametersDto {
         countryName = countryName,
         countryId = countryId,
         regionName = regionName,
+        regionId = regionId,
         industryId = industryId,
         industryName = industryName,
         salary = salary,
@@ -100,12 +102,14 @@ fun FilterParameters.toDto(): FilterParametersDto {
 }
 
 fun FilterParameters.convertToMap(): Map<String, String> {
-    val area = regionName ?: countryId
+    val area = regionId ?: countryId
     val map = mutableMapOf<String, String>()
     area?.takeIf { it.isNotBlank() }?.let { map["area"] = it }
     industryId?.takeIf { it.isNotBlank() }?.let { map["industry"] = it }
     salary?.takeIf { it.isNotBlank() }?.let { map["salary"] = it }
-    map["only_with_salary"] = checkboxWithoutSalary.toString()
+    if (checkboxWithoutSalary != null) {
+        map["only_with_salary"] = checkboxWithoutSalary.toString()
+    }
     return map
 }
 

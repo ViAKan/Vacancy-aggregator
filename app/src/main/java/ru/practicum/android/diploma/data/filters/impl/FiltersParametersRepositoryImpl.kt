@@ -14,10 +14,10 @@ class FiltersParametersRepositoryImpl(private val storage: FilterParametersStora
         storage.putFilterParameters(selected.toDto())
     }
 
-    override fun selectRegion(regionName: String?) {
+    override fun selectRegion(regionName: String?, regionId: String?) {
         val selected = storage.getFilterParameters()
             .toDomain()
-            .copy(regionName = regionName)
+            .copy(regionName = regionName, regionId = regionId)
         storage.putFilterParameters(selected.toDto())
     }
 

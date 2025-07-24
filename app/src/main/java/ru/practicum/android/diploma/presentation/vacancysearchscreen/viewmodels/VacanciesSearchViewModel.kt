@@ -19,7 +19,7 @@ import ru.practicum.android.diploma.util.SingleEventLiveData
 
 class VacanciesSearchViewModel(
     private val interactor: VacanciesInteractor,
-    private val interactorFilter: FiltersParametersInteractor
+    private val interactorFilter: FiltersParametersInteractor,
     private val parameters: FiltersParametersInteractor
 ) : ViewModel() {
     private val _state = MutableLiveData<VacanciesState>()
