@@ -28,6 +28,11 @@ class SearchFiltersViewModel(
         loadParameters()
     }
 
+    fun clearSalary() {
+        interactor.defineSalary(null)
+        loadParameters()
+    }
+
     fun saveSalary(value: String?) {
         interactor.defineSalary(value)
     }

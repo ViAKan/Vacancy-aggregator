@@ -40,7 +40,9 @@ class SearchFiltersFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        val bundle = Bundle().apply {
+            putBoolean(SEARCH_WITH_FILTERS_KEY, true)
+        }
         themeColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorOnContainer)
 
         setupInputField(
@@ -63,7 +65,7 @@ class SearchFiltersFragment : Fragment() {
             binding.editText.setText("")
             binding.editText.clearFocus()
             binding.topHint.setTextColor(themeColor)
-            viewModel.saveSalary("")
+            viewModel.clearSalary()
             showActionButtons()
             binding.editText.hideKeyboardOnIconClose(requireContext())
         }
@@ -99,14 +101,11 @@ class SearchFiltersFragment : Fragment() {
 
         binding.btnCancel.setOnClickListener {
             binding.editText.setText("")
-            binding.materialCheckbox.isChecked = false
             viewModel.resetFilters()
+            setFragmentResult(SEARCH_WITH_FILTERS_KEY, bundle)
         }
 
         binding.btnApply.setOnClickListener {
-            val bundle = Bundle().apply {
-                putBoolean(SEARCH_WITH_FILTERS_KEY, true)
-            }
             setFragmentResult(SEARCH_WITH_FILTERS_KEY, bundle)
             findNavController().popBackStack()
         }
