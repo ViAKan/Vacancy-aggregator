@@ -63,7 +63,6 @@ class SearchFiltersFragment : Fragment() {
             binding.editText.clearFocus()
             binding.topHint.setTextColor(themeColor)
             viewModel.clearSalary()
-            showActionButtons()
             binding.editText.hideKeyboardOnIconClose(requireContext())
         }
 
@@ -115,7 +114,6 @@ class SearchFiltersFragment : Fragment() {
 
         binding.materialCheckbox.setOnCheckedChangeListener { _, isChecked ->
             viewModel.saveCheckBoxState(isChecked)
-            showActionButtons()
         }
     }
 
