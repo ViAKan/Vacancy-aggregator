@@ -30,6 +30,10 @@ class FiltersParametersInteractorImpl(
         repository.selectIndustry(industryId, industryName)
     }
 
+    override fun getSelectedIndustryId(): String? {
+        return repository.getFiltersParameters().industryId
+    }
+
     override fun defineSalary(value: String?) {
         repository.defineSalary(value)
     }

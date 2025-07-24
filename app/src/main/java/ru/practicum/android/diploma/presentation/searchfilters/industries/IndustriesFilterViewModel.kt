@@ -20,6 +20,7 @@ class IndustriesFilterViewModel(
     val industriesState: MutableLiveData<IndustriesUiState> = _industriesState
 
     private var industriesList: List<Industry> = emptyList()
+    private var selectedId: String? = null
 
     init {
         getIndustries()
@@ -40,7 +41,11 @@ class IndustriesFilterViewModel(
             when (resource) {
                 is Resource.Success -> {
                     industriesList = resource.data ?: emptyList()
-                    IndustriesUiState.Content(resource.data!!)
+                    selectedId = filterInteractor.getSelectedIndustryId()
+                    val updatedList = industriesList.map {
+                        it.copy(isSelected = it.id == selectedId)
+                    }
+                    IndustriesUiState.Content(updatedList)
                 }
 
                 is Resource.Error -> {
@@ -74,5 +79,9 @@ class IndustriesFilterViewModel(
 
     fun onClickIndustry(industry: Industry) {
         filterInteractor.selectIndustry(industry.id, industry.name)
+        industriesList = industriesList.map {
+            it.copy(isSelected = it.id == industry.id)
+        }
+        _industriesState.postValue(IndustriesUiState.Content(industriesList))
     }
 }
