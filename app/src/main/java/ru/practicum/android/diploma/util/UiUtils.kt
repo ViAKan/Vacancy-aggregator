@@ -83,18 +83,18 @@ fun TextInputLayout.renderFilterField(
 fun Fragment.setupInputField(
     inputLayout: TextInputLayout,
     editText: TextInputEditText,
-    navActionId: Int,
+    navigateAction: () -> Unit,
     clearAction: () -> Unit
 ) {
     inputLayout.setEndIconOnClickListener {
         if (editText.text.isNullOrBlank()) {
-            findNavController().navigate(navActionId)
+            navigateAction()
         } else {
             clearAction()
         }
     }
 
     editText.setOnClickListener {
-        findNavController().navigate(navActionId)
+        navigateAction()
     }
 }

@@ -66,18 +66,15 @@ class WorkplaceFiltersFragment : Fragment() {
         setupInputField(
             binding.inputLayoutCountry,
             binding.editTextCountry,
-            R.id.action_workplaceFiltersFragment_to_countryFiltersFragment
-        ) {
-            viewModel.clearCountry()
-        }
-
+            navigateAction = { openCountry() },
+            clearAction = { viewModel.clearCountry() }
+        )
         setupInputField(
             binding.inputLayoutRegion,
             binding.editTextRegion,
-            R.id.action_workplaceFiltersFragment_to_regionsFilterFragment
-        ) {
-            viewModel.clearRegion()
-        }
+            navigateAction = { openRegion() },
+            clearAction = { viewModel.clearRegion() }
+        )
 
         binding.btnChoose.setOnClickListener {
             viewModel.saveSelection()
