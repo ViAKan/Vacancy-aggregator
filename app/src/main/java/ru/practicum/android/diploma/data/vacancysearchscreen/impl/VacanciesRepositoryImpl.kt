@@ -14,10 +14,8 @@ import ru.practicum.android.diploma.domain.models.api.VacanciesRepository
 import ru.practicum.android.diploma.domain.models.filters.FilterParameters
 import ru.practicum.android.diploma.domain.models.paging.VacanciesResult
 import ru.practicum.android.diploma.domain.models.vacancydetails.VacancyDetails
-import ru.practicum.android.diploma.util.DebounceConstants.NO_CONNECTION
-import ru.practicum.android.diploma.util.DebounceConstants.SEARCH_SUCCESS
-import ru.practicum.android.diploma.util.DebounceConstants.SERVER_ERROR
 import ru.practicum.android.diploma.util.Resource
+import ru.practicum.android.diploma.util.ResponseType
 
 class VacanciesRepositoryImpl(private val networkClient: NetworkClient) : VacanciesRepository {
 
@@ -36,7 +34,7 @@ class VacanciesRepositoryImpl(private val networkClient: NetworkClient) : Vacanc
                     )
                 )
                 when (response.resultCode) {
-                    SEARCH_SUCCESS -> {
+                    ResponseType.SEARCH_SUCCESS.code -> {
                         val vacanciesResponse = response as VacanciesResponseDto
                         loadedPages.add(page)
 
@@ -51,8 +49,8 @@ class VacanciesRepositoryImpl(private val networkClient: NetworkClient) : Vacanc
                         emit(Resource.Success(result))
                     }
 
-                    NO_CONNECTION -> emit(Resource.Error(ErrorType.NO_INTERNET))
-                    SERVER_ERROR -> emit(Resource.Error(ErrorType.SERVER_ERROR))
+                    ResponseType.NO_CONNECTION.code -> emit(Resource.Error(ErrorType.NO_INTERNET))
+                    ResponseType.SERVER_ERROR.code -> emit(Resource.Error(ErrorType.SERVER_ERROR))
                     else -> emit(Resource.Error(ErrorType.UNKNOWN))
                 }
             }
@@ -65,13 +63,13 @@ class VacanciesRepositoryImpl(private val networkClient: NetworkClient) : Vacanc
     override fun getVacancyDetailsById(id: String): Flow<Resource<VacancyDetails>> = flow {
         val response = networkClient.doRequest(VacancyDetailsRequest(id))
         when (response.resultCode) {
-            SEARCH_SUCCESS -> {
+            ResponseType.SEARCH_SUCCESS.code -> {
                 val data = (response as VacancyDetailsResponseDto).toDomain()
                 emit(Resource.Success(data))
             }
 
-            NO_CONNECTION -> emit(Resource.Error(ErrorType.NO_INTERNET))
-            SERVER_ERROR -> emit(Resource.Error(ErrorType.SERVER_ERROR))
+            ResponseType.NO_CONNECTION.code -> emit(Resource.Error(ErrorType.NO_INTERNET))
+            ResponseType.SERVER_ERROR.code -> emit(Resource.Error(ErrorType.SERVER_ERROR))
             else -> emit(Resource.Error(ErrorType.UNKNOWN))
         }
     }

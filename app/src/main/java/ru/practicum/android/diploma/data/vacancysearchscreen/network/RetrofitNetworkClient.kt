@@ -20,6 +20,7 @@ import ru.practicum.android.diploma.data.models.vacancies.VacanciesRequest
 import ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsApi
 import ru.practicum.android.diploma.data.models.vacancydetails.VacancyDetailsRequest
 import ru.practicum.android.diploma.util.NetworkHelper.isConnected
+import ru.practicum.android.diploma.util.ResponseType
 
 class RetrofitNetworkClient(
     private val service: VacanciesApi,
@@ -55,8 +56,7 @@ class RetrofitNetworkClient(
                 perPage = dto.perPage,
                 filter = dto.filter,
             )
-            Log.d("RequestFilters", "${dto.filter}")
-            response.apply { resultCode = REQUEST_SUCCESS }
+            response.apply { resultCode = ResponseType.SEARCH_SUCCESS.code }
         } catch (e: retrofit2.HttpException) {
             Log.e("Repository", "Error getting vacancies", e)
             createServerErrorResponse()
@@ -68,7 +68,7 @@ class RetrofitNetworkClient(
     ): Response = withContext(Dispatchers.IO) {
         try {
             val response = vacancyService.getVacancyDetails(id = dto.id)
-            response.apply { resultCode = REQUEST_SUCCESS }
+            response.apply { resultCode = ResponseType.SEARCH_SUCCESS.code }
         } catch (e: retrofit2.HttpException) {
             Log.e("Repository", "Error getting details vacancies", e)
             createServerErrorResponse()
@@ -79,7 +79,7 @@ class RetrofitNetworkClient(
         try {
             val response = countryService.getCountries()
             CountriesResponseDto(response).apply {
-                resultCode = REQUEST_SUCCESS
+                resultCode = ResponseType.SEARCH_SUCCESS.code
             }
         } catch (e: retrofit2.HttpException) {
             Log.e("Repository", "Error getting countries list", e)
@@ -91,7 +91,7 @@ class RetrofitNetworkClient(
         try {
             val response = industriesApi.getIndustries()
             IndustryResponseDto(response).apply {
-                resultCode = REQUEST_SUCCESS
+                resultCode = ResponseType.SEARCH_SUCCESS.code
             }
         } catch (e: retrofit2.HttpException) {
             Log.e("Repository", "Error getting details vacancies", e)
@@ -109,7 +109,7 @@ class RetrofitNetworkClient(
                 }
 
                 RegionsResponseDto(response.areas).apply {
-                    resultCode = REQUEST_SUCCESS
+                    resultCode = ResponseType.SEARCH_SUCCESS.code
                 }
             } catch (e: retrofit2.HttpException) {
                 Log.e("Repository", "Error getting cities list", e)
@@ -147,14 +147,7 @@ class RetrofitNetworkClient(
         }
     }
 
-    private fun createServerErrorResponse() = Response().apply { resultCode = SERVER_ERROR }
-    private fun createFailedResponse() = Response().apply { resultCode = REQUEST_FAILED }
-    private fun createNoConnectionResponse() = Response().apply { resultCode = NO_CONNECTION }
-
-    companion object {
-        private const val NO_CONNECTION = -1
-        private const val REQUEST_SUCCESS = 2
-        private const val REQUEST_FAILED = 1
-        private const val SERVER_ERROR = 5
-    }
+    private fun createServerErrorResponse() = Response().apply { resultCode = ResponseType.SERVER_ERROR.code }
+    private fun createFailedResponse() = Response().apply { resultCode = ResponseType.REQUEST_FAILED.code }
+    private fun createNoConnectionResponse() = Response().apply { resultCode = ResponseType.NO_CONNECTION.code }
 }
