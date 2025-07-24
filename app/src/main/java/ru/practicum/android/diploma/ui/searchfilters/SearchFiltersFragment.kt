@@ -63,7 +63,6 @@ class SearchFiltersFragment : Fragment() {
             binding.editText.clearFocus()
             binding.topHint.setTextColor(themeColor)
             viewModel.clearSalary()
-            showActionButtons()
             binding.editText.hideKeyboardOnIconClose(requireContext())
         }
 
@@ -115,7 +114,6 @@ class SearchFiltersFragment : Fragment() {
 
         binding.materialCheckbox.setOnCheckedChangeListener { _, isChecked ->
             viewModel.saveCheckBoxState(isChecked)
-            showActionButtons()
         }
     }
 
@@ -171,7 +169,7 @@ class SearchFiltersFragment : Fragment() {
         val hasSalary = !filters.salary.isNullOrBlank()
         val hasCheckbox = filters.checkboxWithoutSalary ?: false
 
-        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || hasSalary || hasCheckbox!!
+        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || hasSalary || hasCheckbox
 
         binding.btnApply.isVisible = hasAnyFilters
         binding.btnCancel.isVisible = hasAnyFilters
