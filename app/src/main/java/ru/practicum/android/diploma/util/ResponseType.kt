@@ -13,12 +13,11 @@ enum class ResponseType(val code: Int) {
     SERVER_ERROR(CODE_SERVER_ERROR),
     REQUEST_FAILED(CODE_REQUEST_FAILED),
     ID_OTHER_REGIONS(CODE_ID_OTHER_REGIONS),
-    UNKNOWN(CODE_UNKNOWN);
+    UNKNOWN(CODE_UNKNOWN)
 }
 
 fun Int.toResponseType(): ResponseType =
     ResponseType.values().find { it.code == this } ?: ResponseType.UNKNOWN
-
 
 object ResponseCode {
     const val CODE_NO_CONNECTION = -1
