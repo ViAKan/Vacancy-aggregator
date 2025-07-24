@@ -15,6 +15,7 @@ import ru.practicum.android.diploma.databinding.WorkplaceFragmentBinding
 import ru.practicum.android.diploma.domain.models.filters.SelectionType
 import ru.practicum.android.diploma.presentation.workplacescreen.WorkplaceFiltersViewModel
 import ru.practicum.android.diploma.util.renderFilterField
+import ru.practicum.android.diploma.util.setupInputField
 
 class WorkplaceFiltersFragment : Fragment() {
 
@@ -62,25 +63,25 @@ class WorkplaceFiltersFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        binding.viewLayoutCountry.setOnClickListener {
-            openCountry()
+        setupInputField(
+            binding.inputLayoutCountry,
+            binding.editTextCountry,
+            R.id.action_workplaceFiltersFragment_to_countryFiltersFragment
+        ) {
+            viewModel.clearCountry()
         }
 
-        binding.viewLayoutRegion.setOnClickListener {
-            openRegion()
+        setupInputField(
+            binding.inputLayoutRegion,
+            binding.editTextRegion,
+            R.id.action_workplaceFiltersFragment_to_regionsFilterFragment
+        ) {
+            viewModel.clearRegion()
         }
 
         binding.btnChoose.setOnClickListener {
             viewModel.saveSelection()
             findNavController().popBackStack()
-        }
-
-        binding.inputLayoutCountry.setEndIconOnClickListener {
-            viewModel.clearCountry()
-        }
-
-        binding.inputLayoutRegion.setEndIconOnClickListener {
-            viewModel.clearRegion()
         }
 
         viewModel.getTempCountry.observe(viewLifecycleOwner) { tempCountry ->

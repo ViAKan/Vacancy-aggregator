@@ -1,6 +1,7 @@
 package ru.practicum.android.diploma.ui.searchfilters
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,8 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.practicum.android.diploma.R
 import ru.practicum.android.diploma.databinding.SearchFiltersFragmentBinding
@@ -19,6 +22,7 @@ import ru.practicum.android.diploma.util.getThemeColor
 import ru.practicum.android.diploma.util.hideKeyboardOnDone
 import ru.practicum.android.diploma.util.hideKeyboardOnIconClose
 import ru.practicum.android.diploma.util.renderFilterField
+import ru.practicum.android.diploma.util.setupInputField
 
 class SearchFiltersFragment : Fragment() {
 
@@ -39,13 +43,20 @@ class SearchFiltersFragment : Fragment() {
 
         themeColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorOnContainer)
 
-        binding.viewLayoutWorkplace.setOnClickListener {
-            findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment)
+        setupInputField(
+            binding.inputLayoutWorkplace,
+            binding.editTextWorkplace,
+            R.id.action_searchFiltersFragment_to_workplaceFiltersFragment
+        ) {
+            viewModel.clearWorkplace()
         }
 
-
-        binding.viewLayoutIndustry.setOnClickListener {
-            findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment)
+        setupInputField(
+            binding.inputLayoutIndustry,
+            binding.editTextIndustry,
+            R.id.action_searchFiltersFragment_to_industryFilterFragment
+        ) {
+            viewModel.clearWorkplace()
         }
 
         binding.icon.setOnClickListener {
@@ -84,14 +95,6 @@ class SearchFiltersFragment : Fragment() {
 
         binding.arrowBack.setOnClickListener {
             findNavController().popBackStack()
-        }
-
-        binding.inputLayoutWorkplace.setEndIconOnClickListener {
-            viewModel.clearWorkplace()
-        }
-
-        binding.inputLayoutIndustry.setEndIconOnClickListener {
-            viewModel.clearIndustry()
         }
 
         binding.btnCancel.setOnClickListener {

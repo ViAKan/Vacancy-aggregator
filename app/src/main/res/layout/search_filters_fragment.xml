@@ -35,16 +35,6 @@
             android:layout_height="wrap_content" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <View
-        android:id="@+id/view_layout_workplace"
-        android:layout_width="@dimen/dimen_0dp"
-        android:layout_height="0dp"
-        android:clickable="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/input_layout_workplace"
-        app:layout_constraintBottom_toBottomOf="@id/input_layout_workplace"/>
-
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/input_layout_industry"
         style="@style/TextInputLayoutStyle"
@@ -62,16 +52,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </com.google.android.material.textfield.TextInputLayout>
-
-    <View
-        android:id="@+id/view_layout_industry"
-        android:layout_width="@dimen/dimen_0dp"
-        android:layout_height="0dp"
-        android:clickable="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/input_layout_industry"
-        app:layout_constraintBottom_toBottomOf="@id/input_layout_industry"/>
 
     <FrameLayout
         android:id="@+id/salary_zone"
