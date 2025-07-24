@@ -39,11 +39,12 @@ class SearchFiltersFragment : Fragment() {
 
         themeColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorOnContainer)
 
-        binding.editTextWorkplace.setOnClickListener {
+        binding.viewLayoutWorkplace.setOnClickListener {
             findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment)
         }
 
-        binding.editTextIndustry.setOnClickListener {
+
+        binding.viewLayoutIndustry.setOnClickListener {
             findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment)
         }
 

@@ -62,11 +62,11 @@ class WorkplaceFiltersFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        binding.editTextCountry.setOnClickListener {
+        binding.viewLayoutCountry.setOnClickListener {
             openCountry()
         }
 
-        binding.editTextRegion.setOnClickListener {
+        binding.viewLayoutRegion.setOnClickListener {
             openRegion()
         }
 
