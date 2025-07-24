@@ -56,7 +56,7 @@ class SearchFiltersFragment : Fragment() {
             binding.editTextIndustry,
             R.id.action_searchFiltersFragment_to_industryFilterFragment
         ) {
-            viewModel.clearWorkplace()
+            viewModel.clearIndustry()
         }
 
         binding.icon.setOnClickListener {

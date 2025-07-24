@@ -86,14 +86,17 @@ fun Fragment.setupInputField(
     navActionId: Int,
     clearAction: () -> Unit
 ) {
-    if (editText.text.isNullOrBlank()) {
-        inputLayout.setEndIconOnClickListener {
+    inputLayout.setEndIconOnClickListener {
+        if (editText.text.isNullOrBlank()) {
+            findNavController().navigate(navActionId)
+        } else {
+            clearAction()
+        }
+    }
+
+    editText.setOnClickListener {
+        if (editText.text.isNullOrBlank()) {
             findNavController().navigate(navActionId)
         }
-        editText.setOnClickListener {
-            findNavController().navigate(navActionId)
-        }
-    } else {
-        clearAction()
     }
 }
