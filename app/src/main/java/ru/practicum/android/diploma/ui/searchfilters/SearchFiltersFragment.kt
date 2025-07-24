@@ -45,14 +45,16 @@ class SearchFiltersFragment : Fragment() {
         setupInputField(
             binding.inputLayoutWorkplace,
             binding.editTextWorkplace,
-            navigateAction = { findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment) },
+            navigateAction = {
+                findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment) },
             clearAction = { viewModel.clearWorkplace() }
         )
 
         setupInputField(
             binding.inputLayoutIndustry,
             binding.editTextIndustry,
-            navigateAction = { findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment) },
+            navigateAction = {
+                findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment) },
             clearAction = { viewModel.clearIndustry() }
         )
 
