@@ -79,7 +79,7 @@ class WorkplaceFiltersFragment : Fragment() {
                         openRegion(params?.countryId, tempCountry?.id)
                     }
                 }
-                             },
+            },
             clearAction = { viewModel.clearRegion() }
         )
 
@@ -104,9 +104,11 @@ class WorkplaceFiltersFragment : Fragment() {
         _binding = null
     }
 
-    private fun updateCountryView(tempCountry: String?,
-                                  tempRegion: String?,
-                                  savedParams: FilterParameters) {
+    private fun updateCountryView(
+        tempCountry: String?,
+        tempRegion: String?,
+        savedParams: FilterParameters
+    ) {
 
         val countryName = tempCountry ?: savedParams?.countryName
         val regionName = tempRegion ?: savedParams?.regionName
