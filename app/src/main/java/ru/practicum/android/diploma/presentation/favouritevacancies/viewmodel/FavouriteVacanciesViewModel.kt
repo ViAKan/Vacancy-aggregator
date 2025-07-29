@@ -14,13 +14,14 @@ class FavouriteVacanciesViewModel(
     private val _favouriteUiState = MutableLiveData<FavouriteVacanciesUiState>()
     val favouriteUiState: MutableLiveData<FavouriteVacanciesUiState> = _favouriteUiState
 
+
     fun refreshVacancies() {
         viewModelScope.launch {
             favouriteVacanciesDbInteractor.getFavouriteVacancies()
                 .collect { vacanciesList ->
                     val uiList = vacanciesList.map { vacancy ->
-                        vacancy.logo
-                        vacancy.toUiModel() }
+                        vacancy.toUiModel()
+                    }
                     _favouriteUiState.postValue(FavouriteVacanciesUiState.Content(uiList))
                 }
         }

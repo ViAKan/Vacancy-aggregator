@@ -20,6 +20,7 @@ import ru.practicum.android.diploma.domain.models.vacancydetails.EmploymentForm
 import ru.practicum.android.diploma.presentation.vacancydetailsscreen.uistate.VacancyDetailsUiState
 import ru.practicum.android.diploma.presentation.vacancydetailsscreen.viewmodel.VacancyDetailsViewModel
 import ru.practicum.android.diploma.ui.extensions.format
+import ru.practicum.android.diploma.util.NetworkHelper
 import ru.practicum.android.diploma.util.dpToPx
 
 class VacancyDetailsFragment : Fragment() {
@@ -104,11 +105,16 @@ class VacancyDetailsFragment : Fragment() {
                 tvEmploymentFormValue.isVisible = false
             }
 
-            Glide.with(this@VacancyDetailsFragment)
-                .load(state.data.logoUrl)
-                .placeholder(R.drawable.vacancy_placeholder)
-                .transform(RoundedCorners(dpToPx(COVER_ROUND, requireContext())))
-                .into(ivCoverVacancy)
+            if (state.data.logoUrl != null && NetworkHelper.isConnected(requireContext())) {
+                Glide.with(this@VacancyDetailsFragment)
+                    .load(state.data.logoUrl)
+                    .transform(RoundedCorners(dpToPx(COVER_ROUND, requireContext())))
+                    .into(ivCoverVacancy)
+            } else {
+                Glide.with(this@VacancyDetailsFragment)
+                    .load(R.drawable.vacancy_placeholder)
+                    .into(ivCoverVacancy)
+            }
         }
     }
 
