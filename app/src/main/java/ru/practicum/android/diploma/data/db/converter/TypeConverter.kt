@@ -3,7 +3,6 @@ package ru.practicum.android.diploma.data.db.converter
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import org.json.JSONException
 import org.json.JSONObject
 import ru.practicum.android.diploma.domain.models.salary.Salary
 import ru.practicum.android.diploma.domain.models.vacancydetails.EmploymentForm
@@ -17,21 +16,24 @@ class TypeConverter {
 
         when (salary) {
             is Salary.NotSpecifies -> {
-                json.put(TYPE, "NotSpecifies")
+                json.put(TYPE, SalaryType.NOT_SPECIFIED.value)
             }
+
             is Salary.From -> {
-                json.put(TYPE, "From")
+                json.put(TYPE, SalaryType.FROM.value)
                 json.put(AMOUNT, salary.amount)
                 json.put(CURRENCY, salary.currency)
             }
+
             is Salary.Range -> {
-                json.put(TYPE, "Range")
+                json.put(TYPE, SalaryType.RANGE.value)
                 json.put(FROM, salary.from)
                 json.put(TO, salary.to)
                 json.put(CURRENCY, salary.currency)
             }
+
             is Salary.Fixed -> {
-                json.put(TYPE, "Fixed")
+                json.put(TYPE, SalaryType.FIXED.value)
                 json.put(AMOUNT, salary.amount)
                 json.put(CURRENCY, salary.currency)
             }
@@ -42,23 +44,24 @@ class TypeConverter {
     @TypeConverter
     fun toSalary(json: String): Salary {
         val obj = JSONObject(json)
-        val type = obj.optString(TYPE, null) ?: throw JSONException("Missing 'type' field in Salary JSON")
+        val type = SalaryType.from(obj.getString(TYPE))
         return when (type) {
-            "NotSpecifies" -> Salary.NotSpecifies
-            "From" -> Salary.From(
+            SalaryType.NOT_SPECIFIED -> Salary.NotSpecifies
+            SalaryType.FROM -> Salary.From(
                 obj.getInt(AMOUNT),
                 obj.getString(CURRENCY)
             )
-            "Range" -> Salary.Range(
+
+            SalaryType.RANGE -> Salary.Range(
                 obj.getInt(FROM),
                 obj.getInt(TO),
                 obj.getString(CURRENCY)
             )
-            "Fixed" -> Salary.Fixed(
+
+            SalaryType.FIXED -> Salary.Fixed(
                 obj.getInt(AMOUNT),
                 obj.getString(CURRENCY)
             )
-            else -> throw IllegalArgumentException("Unknown salary type")
         }
     }
 
@@ -83,7 +86,7 @@ class TypeConverter {
     fun toStringList(json: String?): List<String>? {
         return json?.let {
             val type = object : TypeToken<List<String>>() {}.type
-            gson.fromJson<List<String>>(it, type)
+            gson.fromJson(it, type)
         }
     }
 
@@ -93,5 +96,17 @@ class TypeConverter {
         private const val CURRENCY = "currency"
         private const val TO = "to"
         private const val FROM = "from"
+    }
+}
+
+enum class SalaryType(val value: String) {
+    NOT_SPECIFIED("NotSpecifies"),
+    FROM("From"),
+    RANGE("Range"),
+    FIXED("Fixed");
+
+    companion object {
+        fun from(value: String): SalaryType =
+            entries.find { it.value == value } ?: throw IllegalArgumentException("Unknown salary type: $value")
     }
 }

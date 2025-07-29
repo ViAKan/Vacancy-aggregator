@@ -177,11 +177,6 @@ class SearchFiltersFragment : Fragment() {
         binding.btnCancel.isVisible = hasAnyFilters
     }
 
-    private fun showActionButtons() {
-        binding.btnApply.isVisible = true
-        binding.btnCancel.isVisible = true
-    }
-
     companion object {
         const val SEARCH_WITH_FILTERS_KEY = "search_with_filters_key"
     }
