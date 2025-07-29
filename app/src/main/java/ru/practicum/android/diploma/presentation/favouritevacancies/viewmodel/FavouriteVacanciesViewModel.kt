@@ -18,7 +18,9 @@ class FavouriteVacanciesViewModel(
         viewModelScope.launch {
             favouriteVacanciesDbInteractor.getFavouriteVacancies()
                 .collect { vacanciesList ->
-                    val uiList = vacanciesList.map { vacancy -> vacancy.toUiModel() }
+                    val uiList = vacanciesList.map { vacancy ->
+                        vacancy.logo
+                        vacancy.toUiModel() }
                     _favouriteUiState.postValue(FavouriteVacanciesUiState.Content(uiList))
                 }
         }

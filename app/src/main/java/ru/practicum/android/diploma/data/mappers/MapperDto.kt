@@ -47,19 +47,6 @@ fun VacancyDetailsResponseDto.toDomain(): VacancyDetails {
     )
 }
 
-fun VacancyDetails.toVacancy(): Vacancy {
-    return Vacancy(
-        id = id,
-        alternateUrl = alternateUrl,
-        nameVacancy = name,
-        employerName = employer,
-        logo = logoUrl,
-        salary = salary,
-        city = city,
-        timestamp = System.currentTimeMillis()
-    )
-}
-
 fun AreasResponseDto.toDomain(): Country {
     return Country(
         id = id,
