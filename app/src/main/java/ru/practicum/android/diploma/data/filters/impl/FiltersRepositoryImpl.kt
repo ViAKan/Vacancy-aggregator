@@ -47,6 +47,7 @@ class FiltersRepositoryImpl(private val networkClient: NetworkClient) : FiltersR
                     .sortedBy { it.name }
                 emit(Resource.Success(data.map { it.toRegion() }))
             }
+
             ResponseType.NO_CONNECTION -> emit(Resource.Error(ErrorType.NO_INTERNET))
             ResponseType.SERVER_ERROR -> emit(Resource.Error(ErrorType.SERVER_ERROR))
             else -> emit(Resource.Error(ErrorType.UNKNOWN))

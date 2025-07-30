@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import ru.practicum.android.diploma.databinding.ItemWorkplaceSelectableBinding
 import ru.practicum.android.diploma.domain.models.filters.Country
 
-class WorkplaceAdapter(private val clickListener: OnClickListener) : ListAdapter<Country, WorkplaceItemViewHolder>(
+class CountryAdapter(private val clickListener: OnClickListener) : ListAdapter<Country, CountryItemViewHolder>(
     object : DiffUtil.ItemCallback<Country>() {
         override fun areItemsTheSame(oldItem: Country, newItem: Country): Boolean {
             return oldItem.id == newItem.id
@@ -18,12 +18,12 @@ class WorkplaceAdapter(private val clickListener: OnClickListener) : ListAdapter
         }
     }
 ) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WorkplaceItemViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CountryItemViewHolder {
         val layoutInspector = LayoutInflater.from(parent.context)
-        return WorkplaceItemViewHolder(ItemWorkplaceSelectableBinding.inflate(layoutInspector, parent, false))
+        return CountryItemViewHolder(ItemWorkplaceSelectableBinding.inflate(layoutInspector, parent, false))
     }
 
-    override fun onBindViewHolder(holder: WorkplaceItemViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: CountryItemViewHolder, position: Int) {
         val country = getItem(position)
         holder.bind(country)
         holder.itemView.setOnClickListener {

@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import ru.practicum.android.diploma.data.mappers.toVacancy
+import ru.practicum.android.diploma.data.db.converter.toDetails
 import ru.practicum.android.diploma.data.vacancysearchscreen.impl.ErrorType
 import ru.practicum.android.diploma.domain.favouritevacancies.usecases.FavouriteVacanciesDbInteractor
 import ru.practicum.android.diploma.domain.models.api.VacanciesInteractor
@@ -43,24 +43,34 @@ class VacancyDetailsViewModel(
     }
 
     private fun statusVacancy(resource: Resource<VacancyDetails>) {
-        _vacancyDetailsState.postValue(
-            when (resource) {
-                is Resource.Error -> {
-                    when (resource.errorType) {
-                        ErrorType.NO_INTERNET -> VacancyDetailsUiState.NothingFound
-                        else -> VacancyDetailsUiState.ServerError
-                    }
-                }
+        viewModelScope.launch {
+            _vacancyDetailsState.postValue(
+                when (resource) {
+                    is Resource.Error -> {
+                        when (resource.errorType) {
+                            ErrorType.NO_INTERNET -> {
+                                val localVacancy = favouriteVacanciesDbInteractor.getVacancyById(vacancyId)
+                                if (localVacancy != null) {
+                                    VacancyDetailsUiState.Content(localVacancy.toDetails())
+                                } else {
+                                    VacancyDetailsUiState.NothingFound
+                                }
+                            }
 
-                is Resource.Success -> {
-                    if (resource.data == null) {
-                        VacancyDetailsUiState.NothingFound
-                    } else {
-                        VacancyDetailsUiState.Content(resource.data)
+                            else -> VacancyDetailsUiState.ServerError
+                        }
+                    }
+
+                    is Resource.Success -> {
+                        if (resource.data == null) {
+                            VacancyDetailsUiState.NothingFound
+                        } else {
+                            VacancyDetailsUiState.Content(resource.data)
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
     }
 
     private fun checkIfFavourite() {
@@ -76,15 +86,14 @@ class VacancyDetailsViewModel(
 
     fun onFavouriteClicked() {
         val vacancyDetails = (_vacancyDetailsState.value as? VacancyDetailsUiState.Content)?.data ?: return
-        val vacancy = vacancyDetails.toVacancy()
 
         viewModelScope.launch {
             val isFavourite = favouriteVacanciesDbInteractor.getVacancyById(vacancyId) != null
             if (!isFavourite) {
-                favouriteVacanciesDbInteractor.insertVacancy(vacancy)
+                favouriteVacanciesDbInteractor.insertVacancy(vacancyDetails)
                 _isFavouriteVacancy.value = true
             } else {
-                favouriteVacanciesDbInteractor.deleteVacancy(vacancy)
+                favouriteVacanciesDbInteractor.deleteVacancy(vacancyDetails)
                 _isFavouriteVacancy.value = false
             }
         }

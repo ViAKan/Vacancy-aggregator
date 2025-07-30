@@ -51,7 +51,6 @@ class IndustriesFilterViewModel(
                 is Resource.Error -> {
                     IndustriesUiState.Error
                 }
-                else -> IndustriesUiState.Empty
             }
         )
     }

@@ -37,7 +37,7 @@ class RegionFilterViewModel(
                     resource.data.forEachIndexed { i, city ->
                         Log.d("CitiesDebug", "${i + 1}. ${city.name}")
                     }
-                    regionsList = resource.data ?: emptyList()
+                    regionsList = resource.data
                     RegionsFiltersUiState.Content(resource.data)
                 }
 

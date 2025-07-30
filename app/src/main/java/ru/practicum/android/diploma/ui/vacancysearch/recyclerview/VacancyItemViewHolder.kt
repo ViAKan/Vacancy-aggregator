@@ -9,6 +9,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import ru.practicum.android.diploma.R
 import ru.practicum.android.diploma.presentation.models.vacancies.VacancyUiModel
 import ru.practicum.android.diploma.ui.extensions.format
+import ru.practicum.android.diploma.util.NetworkHelper
 import ru.practicum.android.diploma.util.dpToPx
 
 class VacancyItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -22,7 +23,7 @@ class VacancyItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) 
         nameVacancy.text = vacancy.nameVacancy
         employeeName.text = vacancy.employerName
         salaryVacancy.text = vacancy.salary.format(itemView.context)
-        if (vacancy.logo != null) {
+        if (vacancy.logo != null && NetworkHelper.isConnected(itemView.context)) {
             loadImage(vacancy.logo)
         } else {
             Glide.with(itemView)
