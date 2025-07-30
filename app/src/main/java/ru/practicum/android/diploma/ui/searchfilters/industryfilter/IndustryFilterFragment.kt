@@ -58,7 +58,11 @@ class IndustryFilterFragment : Fragment(), IndustryItemAdapter.OnClickListener {
             when (state) {
                 is IndustriesUiState.Content -> {
                     binding.recyclerViewSearch.isVisible = true
+                    val selectedId = state.industries.firstOrNull { it.isSelected }?.id
                     adapter.submitList(state.industries)
+                    if (selectedId != null) {
+                        adapter.setSelectedId(selectedId)
+                    }
                     binding.progressBar.isVisible = false
                     binding.industryPlaceholder.isVisible = false
                 }

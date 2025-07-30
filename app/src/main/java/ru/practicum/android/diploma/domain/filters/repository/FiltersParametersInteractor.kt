@@ -7,6 +7,7 @@ interface FiltersParametersInteractor {
     fun getSelectedCountryId(): String?
     fun selectRegion(regionName: String?, regionId: String?, countryName: String? = null)
     fun selectIndustry(industryId: String?, industryName: String?)
+    fun getSelectedIndustryId(): String?
     fun defineSalary(value: String?)
     fun toggleWithoutSalary(enabled: Boolean)
     fun getFiltersParameters(): FilterParameters

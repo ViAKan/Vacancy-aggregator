@@ -19,6 +19,7 @@ import ru.practicum.android.diploma.util.getThemeColor
 import ru.practicum.android.diploma.util.hideKeyboardOnDone
 import ru.practicum.android.diploma.util.hideKeyboardOnIconClose
 import ru.practicum.android.diploma.util.renderFilterField
+import ru.practicum.android.diploma.util.setupInputField
 
 class SearchFiltersFragment : Fragment() {
 
@@ -36,23 +37,32 @@ class SearchFiltersFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        val bundle = Bundle().apply {
+            putBoolean(SEARCH_WITH_FILTERS_KEY, true)
+        }
         themeColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorOnContainer)
 
-        binding.editTextWorkplace.setOnClickListener {
-            findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment)
-        }
+        setupInputField(
+            binding.inputLayoutWorkplace,
+            binding.editTextWorkplace,
+            navigateAction = {
+                findNavController().navigate(R.id.action_searchFiltersFragment_to_workplaceFiltersFragment) },
+            clearAction = { viewModel.clearWorkplace() }
+        )
 
-        binding.editTextIndustry.setOnClickListener {
-            findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment)
-        }
+        setupInputField(
+            binding.inputLayoutIndustry,
+            binding.editTextIndustry,
+            navigateAction = {
+                findNavController().navigate(R.id.action_searchFiltersFragment_to_industryFilterFragment) },
+            clearAction = { viewModel.clearIndustry() }
+        )
 
         binding.icon.setOnClickListener {
             binding.editText.setText("")
             binding.editText.clearFocus()
             binding.topHint.setTextColor(themeColor)
-            viewModel.saveSalary("")
-            showActionButtons()
+            viewModel.clearSalary()
             binding.editText.hideKeyboardOnIconClose(requireContext())
         }
 
@@ -85,24 +95,13 @@ class SearchFiltersFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        binding.inputLayoutWorkplace.setEndIconOnClickListener {
-            viewModel.clearWorkplace()
-        }
-
-        binding.inputLayoutIndustry.setEndIconOnClickListener {
-            viewModel.clearIndustry()
-        }
-
         binding.btnCancel.setOnClickListener {
             binding.editText.setText("")
-            binding.materialCheckbox.isChecked = false
             viewModel.resetFilters()
+            setFragmentResult(SEARCH_WITH_FILTERS_KEY, bundle)
         }
 
         binding.btnApply.setOnClickListener {
-            val bundle = Bundle().apply {
-                putBoolean(SEARCH_WITH_FILTERS_KEY, true)
-            }
             setFragmentResult(SEARCH_WITH_FILTERS_KEY, bundle)
             findNavController().popBackStack()
         }
@@ -115,7 +114,6 @@ class SearchFiltersFragment : Fragment() {
 
         binding.materialCheckbox.setOnCheckedChangeListener { _, isChecked ->
             viewModel.saveCheckBoxState(isChecked)
-            showActionButtons()
         }
     }
 
@@ -131,8 +129,16 @@ class SearchFiltersFragment : Fragment() {
         val gray = ContextCompat.getColor(requireContext(), R.color.gray)
 
         val currentText = binding.editText.text.toString()
-        if (currentText != state.salary) {
-            binding.editText.setText(state.salary)
+        val newSalary = state.salary.orEmpty()
+
+        if (currentText != newSalary) {
+            binding.editText.setText(newSalary)
+        }
+
+        binding.materialCheckbox.isChecked = state.checkboxWithoutSalary ?: false
+
+        viewModel.getFiltersParametersScreen.observe(viewLifecycleOwner) { filters ->
+            updateActionButtonVisibility(filters ?: FilterParameters())
         }
 
         val workplaceText = listOfNotNull(country, region)
@@ -156,22 +162,16 @@ class SearchFiltersFragment : Fragment() {
         val hasSalary = !state.salary.isNullOrBlank()
         val topHintColor = if (hasSalary) ContextCompat.getColor(requireContext(), R.color.black) else themeColor
         binding.topHint.setTextColor(topHintColor)
-        binding.editText.setText(state.salary)
-
-        binding.materialCheckbox.isChecked = state.checkboxWithoutSalary ?: false
-
-        updateActionButtonVisibility()
     }
 
-    private fun updateActionButtonVisibility() {
-        val filters = viewModel.getFiltersParametersScreen.value ?: FilterParameters()
+    private fun updateActionButtonVisibility(filters: FilterParameters) {
 
         val isWorkplaceEmpty = filters.countryName.isNullOrBlank() && filters.regionName.isNullOrBlank()
         val isIndustryEmpty = filters.industryName.isNullOrBlank()
-        val hasSalary = !filters.salary.isNullOrBlank()
+        val hasSalary = filters.salary.isNullOrBlank()
         val hasCheckbox = filters.checkboxWithoutSalary ?: false
 
-        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || hasSalary || hasCheckbox!!
+        val hasAnyFilters = !isWorkplaceEmpty || !isIndustryEmpty || !hasSalary || hasCheckbox
 
         binding.btnApply.isVisible = hasAnyFilters
         binding.btnCancel.isVisible = hasAnyFilters

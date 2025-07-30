@@ -7,6 +7,8 @@ import android.util.TypedValue
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.fragment.app.Fragment
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import ru.practicum.android.diploma.R
 import java.util.Locale
@@ -75,4 +77,23 @@ fun TextInputLayout.renderFilterField(
     this.setHintTextAppearance(hintStyle)
     this.setEndIconDrawable(icon)
 
+}
+
+fun Fragment.setupInputField(
+    inputLayout: TextInputLayout,
+    editText: TextInputEditText,
+    navigateAction: () -> Unit,
+    clearAction: () -> Unit
+) {
+    inputLayout.setEndIconOnClickListener {
+        if (editText.text.isNullOrBlank()) {
+            navigateAction()
+        } else {
+            clearAction()
+        }
+    }
+
+    editText.setOnClickListener {
+        navigateAction()
+    }
 }

@@ -12,9 +12,11 @@ import androidx.navigation.fragment.findNavController
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.practicum.android.diploma.R
 import ru.practicum.android.diploma.databinding.WorkplaceFragmentBinding
+import ru.practicum.android.diploma.domain.models.filters.FilterParameters
 import ru.practicum.android.diploma.domain.models.filters.SelectionType
 import ru.practicum.android.diploma.presentation.workplacescreen.WorkplaceFiltersViewModel
 import ru.practicum.android.diploma.util.renderFilterField
+import ru.practicum.android.diploma.util.setupInputField
 
 class WorkplaceFiltersFragment : Fragment() {
 
@@ -62,37 +64,36 @@ class WorkplaceFiltersFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        binding.editTextCountry.setOnClickListener {
-            openCountry()
-        }
-
-        binding.editTextRegion.setOnClickListener {
-            openRegion()
-        }
+        setupInputField(
+            binding.inputLayoutCountry,
+            binding.editTextCountry,
+            navigateAction = { openCountry() },
+            clearAction = { viewModel.clearCountry() }
+        )
+        setupInputField(
+            binding.inputLayoutRegion,
+            binding.editTextRegion,
+            navigateAction = {
+                viewModel.getSelectedParams.observe(viewLifecycleOwner) { params ->
+                    viewModel.getTempCountry.observe(viewLifecycleOwner) { tempCountry ->
+                        openRegion(params?.countryId, tempCountry?.id)
+                    }
+                }
+            },
+            clearAction = { viewModel.clearRegion() }
+        )
 
         binding.btnChoose.setOnClickListener {
             viewModel.saveSelection()
             findNavController().popBackStack()
         }
 
-        binding.inputLayoutCountry.setEndIconOnClickListener {
-            viewModel.clearCountry()
-        }
-
-        binding.inputLayoutRegion.setEndIconOnClickListener {
-            viewModel.clearRegion()
-        }
-
-        viewModel.getTempCountry.observe(viewLifecycleOwner) { tempCountry ->
-            updateCountryView()
-        }
-
-        viewModel.getTempRegion.observe(viewLifecycleOwner) { tempRegion ->
-            updateCountryView()
-        }
-
-        viewModel.getSelectedParams.observe(viewLifecycleOwner) { savedParams ->
-            updateCountryView()
+        viewModel.getTempCountry.observe(viewLifecycleOwner) { country ->
+            viewModel.getTempRegion.observe(viewLifecycleOwner) { region ->
+                viewModel.getSelectedParams.observe(viewLifecycleOwner) { params ->
+                    updateCountryView(country?.name, region?.name, params)
+                }
+            }
         }
 
         viewModel.loadParameters()
@@ -103,10 +104,11 @@ class WorkplaceFiltersFragment : Fragment() {
         _binding = null
     }
 
-    private fun updateCountryView() {
-        val tempCountry = viewModel.getTempCountry.value?.name
-        val tempRegion = viewModel.getTempRegion.value?.name
-        val savedParams = viewModel.getSelectedParams.value
+    private fun updateCountryView(
+        tempCountry: String?,
+        tempRegion: String?,
+        savedParams: FilterParameters
+    ) {
 
         val countryName = tempCountry ?: savedParams?.countryName
         val regionName = tempRegion ?: savedParams?.regionName
@@ -144,9 +146,7 @@ class WorkplaceFiltersFragment : Fragment() {
         viewModel.clearRegion()
     }
 
-    private fun openRegion() {
-        val savedId = viewModel.getSelectedParams.value?.countryId
-        val tempId = viewModel.getTempCountry.value?.id
+    private fun openRegion(savedId: String?, tempId: String?) {
         val countryIdToUse = tempId ?: savedId ?: ""
         val action = WorkplaceFiltersFragmentDirections
             .actionWorkplaceFiltersFragmentToRegionsFilterFragment(countryIdToUse)
