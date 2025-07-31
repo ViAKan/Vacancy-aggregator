@@ -27,12 +27,12 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/btn_arrow_back"
             style="@style/HeaderWithArrowBackStyle"
-            android:layout_width="match_parent"
+            android:layout_width="@dimen/dimen_0dp"
             android:layout_height="wrap_content"
             app:title="@string/vacancy_details"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toStartOf="@id/btn_share"/>
 
         <ImageButton
             android:id="@+id/btn_favorite"

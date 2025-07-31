@@ -17,7 +17,7 @@ enum class ResponseType(val code: Int) {
 }
 
 fun Int.toResponseType(): ResponseType =
-    ResponseType.values().find { it.code == this } ?: ResponseType.UNKNOWN
+    ResponseType.entries.find { it.code == this } ?: ResponseType.UNKNOWN
 
 object ResponseCode {
     const val CODE_NO_CONNECTION = -1

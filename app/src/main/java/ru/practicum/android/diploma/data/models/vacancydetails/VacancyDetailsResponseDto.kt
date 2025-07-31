@@ -16,16 +16,11 @@ data class VacancyDetailsResponseDto(
     @SerializedName("key_skills") val keySkills: List<KeySkills>?,
     @SerializedName("work_format") val workFormat: List<WorkFormatDto>?,
     @SerializedName("alternate_url") val alternateUrl: String,
-    @SerializedName("address") val address: Address?,
 ) : Response()
 
 data class AreaDto(
     @SerializedName("id") val id: String,
     @SerializedName("name") val name: String
-)
-
-data class Address(
-    @SerializedName("city") val city: String?
 )
 
 data class EmployerDto(

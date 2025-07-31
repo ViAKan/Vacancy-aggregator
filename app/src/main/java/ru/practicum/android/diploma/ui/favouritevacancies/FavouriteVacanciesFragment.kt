@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -16,20 +15,13 @@ import ru.practicum.android.diploma.presentation.favouritevacancies.uistate.Favo
 import ru.practicum.android.diploma.presentation.favouritevacancies.viewmodel.FavouriteVacanciesViewModel
 import ru.practicum.android.diploma.presentation.models.vacancies.VacancyUiModel
 import ru.practicum.android.diploma.ui.vacancysearch.recyclerview.VacancyItemAdapter
-import ru.practicum.android.diploma.util.DebounceConstants.SEARCH_DEBOUNCE_DELAY
-import ru.practicum.android.diploma.util.Debouncer
 
 class FavouriteVacanciesFragment : Fragment(), VacancyItemAdapter.Listener {
 
     private var _binding: FavouriteVacanciesFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private val vacancies = mutableListOf<VacancyUiModel>()
     private val adapter = VacancyItemAdapter(this)
-
-    private val debounce by lazy {
-        Debouncer(viewLifecycleOwner.lifecycleScope, SEARCH_DEBOUNCE_DELAY)
-    }
 
     private val favouriteVacanciesViewModel by viewModel<FavouriteVacanciesViewModel>()
 

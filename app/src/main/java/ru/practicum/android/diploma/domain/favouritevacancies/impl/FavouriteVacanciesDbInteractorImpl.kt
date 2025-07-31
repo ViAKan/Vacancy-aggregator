@@ -6,15 +6,16 @@ import ru.practicum.android.diploma.data.db.entyties.FavouriteVacancy
 import ru.practicum.android.diploma.domain.favouritevacancies.repository.FavouriteVacanciesDbRepository
 import ru.practicum.android.diploma.domain.favouritevacancies.usecases.FavouriteVacanciesDbInteractor
 import ru.practicum.android.diploma.domain.models.vacancies.Vacancy
+import ru.practicum.android.diploma.domain.models.vacancydetails.VacancyDetails
 
 class FavouriteVacanciesDbInteractorImpl(
     private val favouriteVacanciesDbRepository: FavouriteVacanciesDbRepository
 ) : FavouriteVacanciesDbInteractor {
-    override suspend fun insertVacancy(vacancy: Vacancy) {
+    override suspend fun insertVacancy(vacancy: VacancyDetails) {
         favouriteVacanciesDbRepository.insertVacancy(vacancy)
     }
 
-    override suspend fun deleteVacancy(vacancy: Vacancy) {
+    override suspend fun deleteVacancy(vacancy: VacancyDetails) {
         favouriteVacanciesDbRepository.deleteVacancy(vacancy)
     }
 

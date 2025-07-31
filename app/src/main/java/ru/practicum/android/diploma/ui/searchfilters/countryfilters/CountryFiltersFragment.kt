@@ -15,19 +15,19 @@ import ru.practicum.android.diploma.domain.models.filters.Country
 import ru.practicum.android.diploma.domain.models.filters.SelectionType
 import ru.practicum.android.diploma.presentation.countryfiltersscreen.CountryFiltersViewModel
 import ru.practicum.android.diploma.presentation.countryfiltersscreen.uistate.CountryFiltersUiState
-import ru.practicum.android.diploma.ui.searchfilters.recycleview.WorkplaceAdapter
+import ru.practicum.android.diploma.ui.searchfilters.recycleview.CountryAdapter
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.COUNTRY_ID_KEY
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.COUNTRY_NAME_KEY
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.SELECTION_RESULT_KEY
 import ru.practicum.android.diploma.ui.searchfilters.workplacefilters.WorkplaceFiltersFragment.Companion.SELECTION_TYPE_KEY
 
-class CountryFiltersFragment : Fragment(), WorkplaceAdapter.OnClickListener {
+class CountryFiltersFragment : Fragment(), CountryAdapter.OnClickListener {
 
     private var _binding: CountryFiltersFragmentBinding? = null
     private val binding get() = _binding!!
 
     private val viewModel by viewModel<CountryFiltersViewModel>()
-    private val adapter = WorkplaceAdapter(this)
+    private val adapter = CountryAdapter(this)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         _binding = CountryFiltersFragmentBinding.inflate(inflater, container, false)
